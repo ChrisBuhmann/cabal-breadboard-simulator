@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { BoardModel, Hole } from './boardTypes';
 import { GRID_SIZE, NUM_COLS, ROW_TRACK_Y } from './boardTypes';
 import type { CircuitApi } from '../state/circuitState';
@@ -34,6 +34,12 @@ export function BoardView({ board, circuit, pending, onPlaced, onRejected, selec
   const [wireDrag, setWireDrag] = useState<{ start: Hole; pointer: { x: number; y: number } } | null>(null);
   const [pendingPointer, setPendingPointer] = useState<{ x: number; y: number } | null>(null);
 
+  const boardComponents = useMemo(
+    () => circuit.components.filter((c) => c.boardId === board.id),
+    [circuit.components, board.id],
+  );
+  const boardWires = useMemo(() => circuit.wires.filter((w) => w.boardId === board.id), [circuit.wires, board.id]);
+
   const toSvgPoint = useCallback((clientX: number, clientY: number) => {
     if (!svgRef.current) return { x: 0, y: 0 };
     return clientToSvgPoint(svgRef.current, clientX, clientY);
@@ -41,15 +47,15 @@ export function BoardView({ board, circuit, pending, onPlaced, onRejected, selec
 
   const attemptPlace = useCallback(
     (payload: DragPayload, holeId: string) => {
-      const result = validatePlacement(board, circuit.components, payload.type, holeId, payload.rotation);
+      const result = validatePlacement(board, boardComponents, payload.type, holeId, payload.rotation);
       if (!result.valid) {
         onRejected(result.reason ?? 'Invalid placement');
         return;
       }
-      circuit.placeComponent(payload.type, holeId, payload.rotation, payload.value);
+      circuit.placeComponent(board.id, payload.type, holeId, payload.rotation, payload.value);
       onPlaced();
     },
-    [board, circuit, onPlaced, onRejected],
+    [board, boardComponents, circuit, onPlaced, onRejected],
   );
 
   const handleHoleMouseDown = useCallback(
@@ -86,9 +92,10 @@ export function BoardView({ board, circuit, pending, onPlaced, onRejected, selec
       if (check.valid) {
         circuit.addWire({
           id: nextId('wire'),
+          boardId: board.id,
           fromHoleId: wireDrag.start.id,
           toHoleId: candidate.endHole.id,
-          color: nextWireColor(circuit.wires.length),
+          color: nextWireColor(boardWires.length),
           span: candidate.span,
         });
       } else {
@@ -96,7 +103,7 @@ export function BoardView({ board, circuit, pending, onPlaced, onRejected, selec
       }
     }
     setWireDrag(null);
-  }, [wireDrag, board, circuit, onRejected]);
+  }, [wireDrag, board, boardWires.length, circuit, onRejected]);
 
   const handleBoardClick = useCallback(() => {
     if (!pending) onSelect(null);
@@ -133,7 +140,7 @@ export function BoardView({ board, circuit, pending, onPlaced, onRejected, selec
     >
       <BoardChrome />
 
-      {circuit.components.map((comp) => (
+      {boardComponents.map((comp) => (
         <PlacedComponentView
           key={comp.id}
           board={board}
@@ -143,7 +150,7 @@ export function BoardView({ board, circuit, pending, onPlaced, onRejected, selec
         />
       ))}
 
-      {circuit.wires.map((wire) => {
+      {boardWires.map((wire) => {
         const from = board.holesById.get(wire.fromHoleId);
         const to = board.holesById.get(wire.toHoleId);
         if (!from || !to) return null;
@@ -154,6 +161,7 @@ export function BoardView({ board, circuit, pending, onPlaced, onRejected, selec
               e.stopPropagation();
               onSelect({ kind: 'wire', id: wire.id });
             }}
+            onClick={(e) => e.stopPropagation()}
             style={{ cursor: 'pointer' }}
           >
             <JumperSVG
@@ -171,8 +179,8 @@ export function BoardView({ board, circuit, pending, onPlaced, onRejected, selec
 
       {wireDrag && (
         <path
+          className="wire-drag-path"
           d={`M ${wireDrag.start.x * GRID_SIZE} ${wireDrag.start.y * GRID_SIZE} L ${wireDrag.pointer.x} ${wireDrag.pointer.y}`}
-          stroke="#888"
           strokeDasharray="4 3"
           strokeWidth={1.5}
           fill="none"
@@ -180,11 +188,11 @@ export function BoardView({ board, circuit, pending, onPlaced, onRejected, selec
       )}
       {jumperCandidate && (
         <circle
+          className="selection-outline"
           cx={jumperCandidate.endHole.x * GRID_SIZE}
           cy={jumperCandidate.endHole.y * GRID_SIZE}
           r={6}
           fill="none"
-          stroke="#2ecc71"
           strokeWidth={2}
         />
       )}
@@ -253,16 +261,17 @@ function PlacedComponentView({
         e.stopPropagation();
         onSelect();
       }}
+      onClick={(e) => e.stopPropagation()}
       style={{ cursor: 'pointer' }}
     >
       {selected && pins && (
         <rect
+          className="selection-outline"
           x={-6}
           y={-6}
           width={(Math.max(...pins.map((p) => Math.abs(p.col - anchor.col))) || 0) * GRID_SIZE + 12}
           height={12}
           fill="none"
-          stroke="#2ecc71"
           strokeDasharray="3 2"
           strokeWidth={1.5}
         />
@@ -279,22 +288,21 @@ function BoardChrome() {
   return (
     <g>
       <rect
+        className="board-base"
         x={-GRID_SIZE}
         y={-GRID_SIZE * 2.2}
         width={(NUM_COLS + 1) * GRID_SIZE}
         height={16 * GRID_SIZE + GRID_SIZE * 4.4}
         rx={10}
-        fill="#efe7d2"
-        stroke="#c9bf9f"
       />
 
       {/* trench */}
       <rect
+        className="board-trench"
         x={-GRID_SIZE}
         y={ROW_TRACK_Y[6] * GRID_SIZE + GRID_SIZE * 0.65}
         width={(NUM_COLS + 1) * GRID_SIZE}
         height={(ROW_TRACK_Y[7] - ROW_TRACK_Y[6]) * GRID_SIZE - GRID_SIZE * 1.3}
-        fill="#d8cfb2"
       />
 
       {RAIL_ROW_TRACKS.map((rt, i) => {
@@ -303,11 +311,11 @@ function BoardChrome() {
         return (
           <line
             key={rt}
+            className={`board-rail-line ${isPos ? 'pos' : 'neg'}`}
             x1={0}
             y1={y + GRID_SIZE * 0.55}
             x2={NUM_COLS * GRID_SIZE}
             y2={y + GRID_SIZE * 0.55}
-            stroke={isPos ? '#c0392b' : '#2c5aa0'}
             strokeWidth={1.5}
           />
         );
@@ -315,22 +323,22 @@ function BoardChrome() {
 
       {labelCols.map((col) => (
         <g key={col}>
-          <text x={col * GRID_SIZE} y={ROW_TRACK_Y[0] * GRID_SIZE - GRID_SIZE * 1.1} textAnchor="middle" fontSize={8} fill="#8a8266">
+          <text className="board-label-text" x={col * GRID_SIZE} y={ROW_TRACK_Y[0] * GRID_SIZE - GRID_SIZE * 1.1} textAnchor="middle" fontSize={8}>
             {col}
           </text>
-          <text x={col * GRID_SIZE} y={ROW_TRACK_Y[13] * GRID_SIZE + GRID_SIZE * 1.6} textAnchor="middle" fontSize={8} fill="#8a8266">
+          <text className="board-label-text" x={col * GRID_SIZE} y={ROW_TRACK_Y[13] * GRID_SIZE + GRID_SIZE * 1.6} textAnchor="middle" fontSize={8}>
             {col}
           </text>
         </g>
       ))}
 
       {['a', 'b', 'c', 'd', 'e'].map((r, i) => (
-        <text key={r} x={-GRID_SIZE * 0.7} y={ROW_TRACK_Y[2 + i] * GRID_SIZE + 3} fontSize={7} fill="#8a8266">
+        <text className="board-label-text" key={r} x={-GRID_SIZE * 0.7} y={ROW_TRACK_Y[2 + i] * GRID_SIZE + 3} fontSize={7}>
           {r}
         </text>
       ))}
       {['f', 'g', 'h', 'i', 'j'].map((r, i) => (
-        <text key={r} x={-GRID_SIZE * 0.7} y={ROW_TRACK_Y[7 + i] * GRID_SIZE + 3} fontSize={7} fill="#8a8266">
+        <text className="board-label-text" key={r} x={-GRID_SIZE * 0.7} y={ROW_TRACK_Y[7 + i] * GRID_SIZE + 3} fontSize={7}>
           {r}
         </text>
       ))}
@@ -347,7 +355,7 @@ function StaticHoles() {
     const y = ROW_TRACK_Y[rt] * GRID_SIZE;
     for (let col = 1; col <= NUM_COLS; col++) {
       if (isRail && col % 6 === 0) continue;
-      dots.push(<circle key={`${rt}-${col}`} cx={col * GRID_SIZE} cy={y} r={1.8} fill="#4a4a4a" />);
+      dots.push(<circle key={`${rt}-${col}`} className="board-hole-dot" cx={col * GRID_SIZE} cy={y} r={1.8} />);
     }
   }
   return <g pointerEvents="none">{dots}</g>;

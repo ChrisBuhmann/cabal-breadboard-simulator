@@ -94,7 +94,7 @@ export interface CircuitApi {
   wires: Wire[];
   canUndo: boolean;
   canRedo: boolean;
-  placeComponent: (type: ComponentType, anchorHoleId: string, rotation: Rotation, value: string) => void;
+  placeComponent: (boardId: string, type: ComponentType, anchorHoleId: string, rotation: Rotation, value: string) => void;
   removeComponent: (id: string) => void;
   rotateComponent: (id: string, rotation: Rotation) => void;
   addWire: (wire: Wire) => void;
@@ -121,10 +121,10 @@ export function useCircuitProvider(): CircuitApi {
   });
 
   const placeComponent = useCallback(
-    (type: ComponentType, anchorHoleId: string, rotation: Rotation, value: string) => {
+    (boardId: string, type: ComponentType, anchorHoleId: string, rotation: Rotation, value: string) => {
       dispatch({
         type: 'PLACE_COMPONENT',
-        component: { id: nextId('comp'), type, anchorHoleId, rotation, value },
+        component: { id: nextId('comp'), boardId, type, anchorHoleId, rotation, value },
       });
     },
     [],

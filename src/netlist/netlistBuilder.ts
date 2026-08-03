@@ -45,17 +45,21 @@ export interface Netlist {
   nodes: NetlistNode[];
 }
 
-export function buildNetlist(board: BoardModel, components: PlacedComponent[], wires: Wire[]): Netlist {
-  const uf = new UnionFind(board.nodeGroupIds);
+export function buildNetlist(boards: BoardModel[], components: PlacedComponent[], wires: Wire[]): Netlist {
+  const boardsById = new Map(boards.map((b) => [b.id, b]));
+  const uf = new UnionFind(boards.flatMap((b) => b.nodeGroupIds));
 
   for (const wire of wires) {
-    const fromGroup = board.holesById.get(wire.fromHoleId)?.nodeGroupId;
-    const toGroup = board.holesById.get(wire.toHoleId)?.nodeGroupId;
+    const board = boardsById.get(wire.boardId);
+    const fromGroup = board?.holesById.get(wire.fromHoleId)?.nodeGroupId;
+    const toGroup = board?.holesById.get(wire.toHoleId)?.nodeGroupId;
     if (fromGroup && toGroup) uf.union(fromGroup, toGroup);
   }
 
   const rootToPins = new Map<string, NetlistPinRef[]>();
   for (const comp of components) {
+    const board = boardsById.get(comp.boardId);
+    if (!board) continue;
     const pinHoles = resolvePinHoles(board, comp.type, comp.anchorHoleId, comp.rotation);
     if (!pinHoles) continue;
     pinHoles.forEach((hole, pinIndex) => {

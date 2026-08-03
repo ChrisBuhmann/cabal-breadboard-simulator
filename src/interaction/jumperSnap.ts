@@ -5,6 +5,7 @@ export const JUMPER_SPANS = [1, 2, 3, 4, 6, 8, 10];
 
 export interface Wire {
   id: string;
+  boardId: string;
   fromHoleId: string;
   toHoleId: string;
   color: string;
@@ -27,11 +28,11 @@ function candidatesForAxis(
     let hole: Hole | undefined;
     if (axis === 'col') {
       const targetCol = start.col + sign * span;
-      hole = board.holesById.get(holeId(start.row, targetCol));
+      hole = board.holesById.get(holeId(board.id, start.row, targetCol));
     } else {
       const targetRowTrack = start.rowTrack + sign * span;
       const row = ROW_CODES[targetRowTrack];
-      if (row) hole = board.holesById.get(holeId(row, start.col));
+      if (row) hole = board.holesById.get(holeId(board.id, row, start.col));
     }
     if (hole) results.push({ endHole: hole, span });
   }

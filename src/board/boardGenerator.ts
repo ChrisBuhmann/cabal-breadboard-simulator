@@ -29,7 +29,7 @@ function railHoleExists(col: number): boolean {
   return col % 6 !== 0;
 }
 
-export function generateBoard(): BoardModel {
+export function generateBoard(boardId: string): BoardModel {
   const holes: Hole[] = [];
   const holesById = new Map<string, Hole>();
   const nodeGroupSet = new Set<string>();
@@ -38,10 +38,10 @@ export function generateBoard(): BoardModel {
     const y = ROW_TRACK_Y[rowTrack];
     for (let col = 1; col <= NUM_COLS; col++) {
       if (isRailRow(rowTrack) && !railHoleExists(col)) continue;
-      const nodeGroupId = nodeGroupFor(row, rowTrack, col);
+      const nodeGroupId = `${boardId}:${nodeGroupFor(row, rowTrack, col)}`;
       nodeGroupSet.add(nodeGroupId);
       const hole: Hole = {
-        id: holeId(row, col),
+        id: holeId(boardId, row, col),
         row,
         rowTrack,
         col,
@@ -55,6 +55,7 @@ export function generateBoard(): BoardModel {
   });
 
   return {
+    id: boardId,
     holes,
     holesById,
     nodeGroupIds: Array.from(nodeGroupSet),

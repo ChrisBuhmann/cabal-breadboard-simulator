@@ -92,7 +92,7 @@
   cursor: grab;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: #faf7ec;
+  background: var(--palette-icon-bg);
   flex-shrink: 0;
 }
 
@@ -142,14 +142,28 @@
   overflow: auto;
   background: repeating-linear-gradient(45deg, transparent, transparent 14px, rgba(0, 0, 0, 0.02) 14px, rgba(0, 0, 0, 0.02) 28px);
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
   padding: 24px;
+}
+
+.board-section {
+  width: 100%;
+  max-width: 1400px;
+}
+
+.board-section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 6px 2px;
 }
 
 .board-svg {
   width: 100%;
-  max-width: 1400px;
   height: auto;
 }
 
@@ -159,6 +173,39 @@
 
 .hole-hit:hover {
   fill: rgba(46, 204, 113, 0.25);
+}
+
+.board-base {
+  fill: var(--board-surface);
+  stroke: var(--board-border);
+}
+
+.board-trench {
+  fill: var(--board-trench);
+}
+
+.board-rail-line.pos {
+  stroke: var(--board-rail-pos);
+}
+
+.board-rail-line.neg {
+  stroke: var(--board-rail-neg);
+}
+
+.board-label-text {
+  fill: var(--board-label);
+}
+
+.board-hole-dot {
+  fill: var(--board-hole);
+}
+
+.wire-drag-path {
+  stroke: var(--wire-drag);
+}
+
+.selection-outline {
+  stroke: var(--select-accent);
 }
 
 .debug-panel {

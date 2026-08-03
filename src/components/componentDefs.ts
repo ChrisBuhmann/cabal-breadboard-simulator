@@ -30,6 +30,7 @@ export interface ComponentDef {
 
 export interface PlacedComponent {
   id: string;
+  boardId: string;
   type: ComponentType;
   anchorHoleId: string;
   rotation: Rotation;

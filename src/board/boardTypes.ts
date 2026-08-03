@@ -55,12 +55,14 @@ export interface Hole {
 }
 
 export interface BoardModel {
+  id: string;
   holes: Hole[];
   holesById: Map<string, Hole>;
   nodeGroupIds: string[];
   numCols: number;
 }
 
-export function holeId(row: RowCode, col: number): string {
-  return `${row}${col}`;
+/** Namespaced by boardId so hole ids stay globally unique once multiple boards exist. */
+export function holeId(boardId: string, row: RowCode, col: number): string {
+  return `${boardId}:${row}${col}`;
 }

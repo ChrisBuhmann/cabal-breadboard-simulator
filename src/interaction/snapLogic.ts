@@ -38,7 +38,7 @@ export function resolvePinHoles(
     if (rowTrack < 0 || rowTrack >= ROW_CODES.length) return null;
     if (col < 1 || col > board.numCols) return null;
     const row = ROW_CODES[rowTrack];
-    const hole = board.holesById.get(holeId(row, col));
+    const hole = board.holesById.get(holeId(board.id, row, col));
     if (!hole) return null;
     holes.push(hole);
   }
