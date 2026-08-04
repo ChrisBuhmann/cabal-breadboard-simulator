@@ -70,17 +70,23 @@ export function validatePlacement(
   }
 
   const zones = new Set(pinHoles.map((h) => zoneOf(h.rowTrack)));
+
+  // DIP packages are rigid (fixed 2-row footprint), so their straddle only makes
+  // physical sense anchored exactly on row e. Flexible-lead parts (resistors,
+  // diodes, etc.) can bend to cross the trench at any row/rotation that happens
+  // to land their pins in both terminal zones - no anchor restriction needed.
   if (def.straddlesTrench) {
     const anchor = board.holesById.get(anchorHoleId)!;
     if (anchor.row !== 'e') {
       return { valid: false, reason: `${def.label} must be anchored on row e, straddling rows e/f` };
     }
-    const expected = new Set(['terminal-top', 'terminal-bottom']);
-    if (zones.size !== 2 || ![...zones].every((z) => expected.has(z))) {
-      return { valid: false, reason: `${def.label} must straddle the trench (rows e/f)` };
+  }
+
+  if (zones.size > 1) {
+    const spansOnlyTrench = zones.size === 2 && zones.has('terminal-top') && zones.has('terminal-bottom');
+    if (!spansOnlyTrench) {
+      return { valid: false, reason: 'Component cannot span multiple board zones' };
     }
-  } else if (zones.size > 1) {
-    return { valid: false, reason: 'Component cannot span multiple board zones' };
   }
 
   const occupied = occupiedHoleIds(existingComponents, board);

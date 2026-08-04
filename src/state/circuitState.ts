@@ -2,10 +2,12 @@ import { createContext, useCallback, useContext, useMemo, useReducer } from 'rea
 import type { ComponentType, PlacedComponent } from '../components/componentDefs';
 import type { Rotation } from '../interaction/rotation';
 import type { Wire } from '../interaction/jumperSnap';
+import type { RailLink } from '../interaction/railLink';
 
 export interface CircuitSnapshot {
   components: PlacedComponent[];
   wires: Wire[];
+  railLinks: RailLink[];
 }
 
 interface HistoryState {
@@ -20,12 +22,14 @@ type Action =
   | { type: 'ROTATE_COMPONENT'; id: string; rotation: Rotation }
   | { type: 'ADD_WIRE'; wire: Wire }
   | { type: 'REMOVE_WIRE'; id: string }
+  | { type: 'ADD_RAIL_LINK'; railLink: RailLink }
+  | { type: 'REMOVE_RAIL_LINK'; id: string }
   | { type: 'UNDO' }
   | { type: 'REDO' }
   | { type: 'LOAD'; snapshot: CircuitSnapshot }
   | { type: 'RESET' };
 
-const EMPTY_SNAPSHOT: CircuitSnapshot = { components: [], wires: [] };
+const EMPTY_SNAPSHOT: CircuitSnapshot = { components: [], wires: [], railLinks: [] };
 const HISTORY_LIMIT = 100;
 
 function withHistory(state: HistoryState, present: CircuitSnapshot): HistoryState {
@@ -42,8 +46,8 @@ function reducer(state: HistoryState, action: Action): HistoryState {
       });
     case 'REMOVE_COMPONENT':
       return withHistory(state, {
+        ...state.present,
         components: state.present.components.filter((c) => c.id !== action.id),
-        wires: state.present.wires,
       });
     case 'ROTATE_COMPONENT':
       return withHistory(state, {
@@ -61,6 +65,16 @@ function reducer(state: HistoryState, action: Action): HistoryState {
       return withHistory(state, {
         ...state.present,
         wires: state.present.wires.filter((w) => w.id !== action.id),
+      });
+    case 'ADD_RAIL_LINK':
+      return withHistory(state, {
+        ...state.present,
+        railLinks: [...state.present.railLinks, action.railLink],
+      });
+    case 'REMOVE_RAIL_LINK':
+      return withHistory(state, {
+        ...state.present,
+        railLinks: state.present.railLinks.filter((r) => r.id !== action.id),
       });
     case 'LOAD':
       return withHistory(state, action.snapshot);
@@ -92,6 +106,7 @@ function reducer(state: HistoryState, action: Action): HistoryState {
 export interface CircuitApi {
   components: PlacedComponent[];
   wires: Wire[];
+  railLinks: RailLink[];
   canUndo: boolean;
   canRedo: boolean;
   placeComponent: (boardId: string, type: ComponentType, anchorHoleId: string, rotation: Rotation, value: string) => void;
@@ -99,6 +114,8 @@ export interface CircuitApi {
   rotateComponent: (id: string, rotation: Rotation) => void;
   addWire: (wire: Wire) => void;
   removeWire: (id: string) => void;
+  addRailLink: (railLink: RailLink) => void;
+  removeRailLink: (id: string) => void;
   undo: () => void;
   redo: () => void;
   load: (snapshot: CircuitSnapshot) => void;
@@ -137,6 +154,8 @@ export function useCircuitProvider(): CircuitApi {
   );
   const addWire = useCallback((wire: Wire) => dispatch({ type: 'ADD_WIRE', wire }), []);
   const removeWire = useCallback((id: string) => dispatch({ type: 'REMOVE_WIRE', id }), []);
+  const addRailLink = useCallback((railLink: RailLink) => dispatch({ type: 'ADD_RAIL_LINK', railLink }), []);
+  const removeRailLink = useCallback((id: string) => dispatch({ type: 'REMOVE_RAIL_LINK', id }), []);
   const undo = useCallback(() => dispatch({ type: 'UNDO' }), []);
   const redo = useCallback(() => dispatch({ type: 'REDO' }), []);
   const load = useCallback((snapshot: CircuitSnapshot) => dispatch({ type: 'LOAD', snapshot }), []);
@@ -146,6 +165,7 @@ export function useCircuitProvider(): CircuitApi {
     () => ({
       components: state.present.components,
       wires: state.present.wires,
+      railLinks: state.present.railLinks,
       canUndo: state.past.length > 0,
       canRedo: state.future.length > 0,
       placeComponent,
@@ -153,12 +173,27 @@ export function useCircuitProvider(): CircuitApi {
       rotateComponent,
       addWire,
       removeWire,
+      addRailLink,
+      removeRailLink,
       undo,
       redo,
       load,
       reset,
     }),
-    [state, placeComponent, removeComponent, rotateComponent, addWire, removeWire, undo, redo, load, reset],
+    [
+      state,
+      placeComponent,
+      removeComponent,
+      rotateComponent,
+      addWire,
+      removeWire,
+      addRailLink,
+      removeRailLink,
+      undo,
+      redo,
+      load,
+      reset,
+    ],
   );
 }
 
@@ -180,7 +215,8 @@ export function loadCircuitFromStorage(): CircuitSnapshot | null {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as CircuitSnapshot;
+    const parsed = JSON.parse(raw) as Partial<CircuitSnapshot>;
+    return { components: parsed.components ?? [], wires: parsed.wires ?? [], railLinks: parsed.railLinks ?? [] };
   } catch {
     return null;
   }

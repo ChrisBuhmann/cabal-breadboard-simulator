@@ -48,6 +48,82 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
+.board-connections {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-bg);
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.board-connections-label {
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+}
+
+.board-connections-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.board-connections-picker select {
+  font: inherit;
+  padding: 3px 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel-bg);
+  color: var(--text);
+}
+
+.board-connections-picker button {
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  background: var(--panel-bg);
+  border-radius: 4px;
+  color: var(--text);
+}
+
+.board-connections-arrow {
+  color: var(--text-dim);
+}
+
+.board-connections-list {
+  list-style: none;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+}
+
+.board-connections-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.board-connections-list button {
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+}
+
 .app-body {
   flex: 1;
   display: grid;

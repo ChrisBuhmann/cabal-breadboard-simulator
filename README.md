@@ -48,6 +48,16 @@ npm run dev
   vertically. Hole ids and node-group ids are namespaced per board (`board-2:e5`),
   so placements/wires/netlists never cross boards; the netlist debug panel
   aggregates all boards' nets together.
+- **Board Connections** (`src/ui/BoardConnectionsPanel.tsx`, shown once a second
+  board exists): links a power/ground rail on one board to a rail on another,
+  e.g. to share a 9V/ground bus across two physical breadboards. This is a
+  dedicated picker (pick board + rail on each side, Connect) rather than a
+  drawn wire — jumpering between two separate board canvases doesn't have a
+  meaningful "snapped length" the way an in-board jumper does, and rails are a
+  small, bounded set of connection points, so a picker is both simpler and
+  more honest about what's being modeled. A link unions both physical L/R
+  rail segments (see `src/interaction/railLink.ts`) and is fully undo/redo-able.
+  Regular jumper wires remain scoped to a single board.
 - **Dark theme**: manual toggle (top-right), persisted to `localStorage`, applied
   before first paint. Defaults to the OS preference.
 
@@ -129,3 +139,12 @@ the SVG `rotate()` transform applied to each component's artwork), so hole-snapp
 and rendering always agree. Non-DIP components allow all four 90° rotations; DIP
 packages only allow 0°/180°, since a real DIP's straddle is fixed by its package,
 not something free rotation could produce.
+
+**Trench crossing**: any component — not just DIPs — is allowed to span the
+top/bottom terminal zones (e.g. a resistor bent to jump from row c to row g),
+matching how real leaded parts get built on a breadboard. DIP packages still
+must anchor exactly on row `e`, since their footprint is rigid and only lines
+up with the trench from that one anchor; flexible-lead parts have no such
+restriction and can straddle from whatever row/rotation their pins land on, as
+long as both zones are the top/bottom terminal strips (spanning into a rail
+zone is still rejected).

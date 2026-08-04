@@ -1,6 +1,8 @@
 import type { BoardModel } from '../board/boardTypes';
 import type { PlacedComponent } from '../components/componentDefs';
 import type { Wire } from '../interaction/jumperSnap';
+import type { RailLink } from '../interaction/railLink';
+import { railNodeGroupIds } from '../interaction/railLink';
 import { resolvePinHoles } from '../interaction/snapLogic';
 
 class UnionFind {
@@ -45,7 +47,12 @@ export interface Netlist {
   nodes: NetlistNode[];
 }
 
-export function buildNetlist(boards: BoardModel[], components: PlacedComponent[], wires: Wire[]): Netlist {
+export function buildNetlist(
+  boards: BoardModel[],
+  components: PlacedComponent[],
+  wires: Wire[],
+  railLinks: RailLink[] = [],
+): Netlist {
   const boardsById = new Map(boards.map((b) => [b.id, b]));
   const uf = new UnionFind(boards.flatMap((b) => b.nodeGroupIds));
 
@@ -54,6 +61,13 @@ export function buildNetlist(boards: BoardModel[], components: PlacedComponent[]
     const fromGroup = board?.holesById.get(wire.fromHoleId)?.nodeGroupId;
     const toGroup = board?.holesById.get(wire.toHoleId)?.nodeGroupId;
     if (fromGroup && toGroup) uf.union(fromGroup, toGroup);
+  }
+
+  for (const link of railLinks) {
+    const [aLeft, aRight] = railNodeGroupIds(link.boardAId, link.railA);
+    const [bLeft, bRight] = railNodeGroupIds(link.boardBId, link.railB);
+    uf.union(aLeft, bLeft);
+    uf.union(aRight, bRight);
   }
 
   const rootToPins = new Map<string, NetlistPinRef[]>();

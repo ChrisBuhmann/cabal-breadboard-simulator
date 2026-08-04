@@ -5,6 +5,7 @@ import { BoardView, type Selection } from './board/BoardView';
 import { COMPONENT_DEFS } from './components/componentDefs';
 import { ComponentPalette } from './ui/ComponentPalette';
 import { NetlistDebugPanel } from './ui/NetlistDebugPanel';
+import { BoardConnectionsPanel } from './ui/BoardConnectionsPanel';
 import { buildNetlist } from './netlist/netlistBuilder';
 import {
   CircuitContext,
@@ -67,7 +68,10 @@ function AppInner() {
     });
   };
 
-  const netlist = useMemo(() => buildNetlist(boards, circuit.components, circuit.wires), [boards, circuit.components, circuit.wires]);
+  const netlist = useMemo(
+    () => buildNetlist(boards, circuit.components, circuit.wires, circuit.railLinks),
+    [boards, circuit.components, circuit.wires, circuit.railLinks],
+  );
 
   const flash = (msg: string) => {
     setMessage(msg);
@@ -160,7 +164,7 @@ function AppInner() {
           </button>
           <button
             onClick={() => {
-              saveCircuitToStorage({ components: circuit.components, wires: circuit.wires });
+              saveCircuitToStorage({ components: circuit.components, wires: circuit.wires, railLinks: circuit.railLinks });
               flash('Circuit saved');
             }}
           >
@@ -171,7 +175,11 @@ function AppInner() {
               const snap = loadCircuitFromStorage();
               if (snap) {
                 circuit.load(snap);
-                ensureBoardsFor([...snap.components.map((c) => c.boardId), ...snap.wires.map((w) => w.boardId)]);
+                ensureBoardsFor([
+                  ...snap.components.map((c) => c.boardId),
+                  ...snap.wires.map((w) => w.boardId),
+                  ...snap.railLinks.flatMap((r) => [r.boardAId, r.boardBId]),
+                ]);
                 flash('Circuit loaded');
               } else {
                 flash('No saved circuit found');
@@ -196,6 +204,15 @@ function AppInner() {
       </header>
 
       {message && <div className="toast">{message}</div>}
+
+      {boards.length > 1 && (
+        <BoardConnectionsPanel
+          boards={boards}
+          railLinks={circuit.railLinks}
+          onAdd={circuit.addRailLink}
+          onRemove={circuit.removeRailLink}
+        />
+      )}
 
       <div className="app-body">
         <ComponentPalette
