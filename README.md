@@ -159,10 +159,21 @@ fixed by its package, not something free rotation could produce. Flexible
 parts have no rotation at all — their angle is whatever the line between
 their two chosen holes happens to be.
 
-**Trench crossing**: any component — not just DIPs — is allowed to span the
-top/bottom terminal zones (e.g. a resistor bent to jump from row c to row g),
-matching how real leaded parts get built on a breadboard. DIP packages still
-must anchor exactly on row `e`, since their footprint is rigid and only lines
-up with the trench from that one anchor; other parts have no such restriction
-and can straddle from wherever their pins land, as long as both zones are the
-top/bottom terminal strips (spanning into a rail zone is still rejected).
+**Zone spanning**: a component's two pins are allowed to land in different
+board zones only if those zones are physically adjacent on a real board
+(`ADJACENT_ZONE_PAIRS` in `snapLogic.ts`) — anything further needs an actual
+jumper wire to bridge instead:
+
+- top terminal ↔ bottom terminal (trench crossing, e.g. row c to row g)
+- a rail ↔ its own opposite-polarity rail (e.g. a bypass cap straight across
+  the two top rails)
+- a rail ↔ its adjacent terminal strip (e.g. a pull-up resistor from the
+  +rail into row a) — the standard way of tying a component to power/ground
+  without a separate wire
+
+DIP packages still must anchor exactly on row `e` for their trench straddle,
+since their footprint is rigid and only lines up with the trench from that
+one anchor (and their fixed 2-row geometry can never physically reach a rail
+regardless). Non-rigid/TO-92/pot parts have no such anchor restriction. Spans
+that aren't in the adjacency list (e.g. top rail to bottom terminal, or top
+rail to bottom rail) are still rejected — use a jumper wire for those.

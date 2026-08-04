@@ -1,7 +1,27 @@
-import type { BoardModel, Hole } from '../board/boardTypes';
+import type { BoardModel, Hole, Zone } from '../board/boardTypes';
 import { ROW_CODES, GRID_SIZE, zoneOf, holeId } from '../board/boardTypes';
 import { COMPONENT_DEFS, isFlexibleComponent, type ComponentType, type PlacedComponent } from '../components/componentDefs';
 import { rotateOffset, type Rotation } from './rotation';
+
+function zonePairKey(a: Zone, b: Zone): string {
+  return [a, b].sort().join('|');
+}
+
+/** Zone pairs a component's two pins may legitimately span without a separate
+ * jumper wire - i.e. physically adjacent on a real board. Rail-to-terminal
+ * (e.g. a resistor leg in the +rail, the other in row a) and rail-to-rail
+ * (e.g. a bypass cap straight across the two top rails) are both extremely
+ * common breadboard patterns; anything further (top rail to bottom terminal,
+ * top rail to bottom rail, etc.) needs an actual wire to bridge. */
+const ADJACENT_ZONE_PAIRS = new Set<string>([
+  zonePairKey('terminal-top', 'terminal-bottom'),
+  zonePairKey('rail-top-pos', 'rail-top-neg'),
+  zonePairKey('rail-bot-pos', 'rail-bot-neg'),
+  zonePairKey('rail-top-pos', 'terminal-top'),
+  zonePairKey('rail-top-neg', 'terminal-top'),
+  zonePairKey('rail-bot-pos', 'terminal-bottom'),
+  zonePairKey('rail-bot-neg', 'terminal-bottom'),
+]);
 
 export function findNearestHole(board: BoardModel, px: number, py: number, maxDist = GRID_SIZE * 0.6): Hole | null {
   let best: Hole | null = null;
@@ -72,17 +92,17 @@ export interface PlacementResult {
   reason?: string;
 }
 
-/** Shared by both placement paths: rejects spans into more than the top/bottom
- * terminal zones, and rejects any hole already occupied by another component. */
+/** Shared by both placement paths: rejects spans into non-adjacent board
+ * zones, and rejects any hole already occupied by another component. */
 function checkZonesAndOccupancy(
   board: BoardModel,
   holes: Hole[],
   existingComponents: PlacedComponent[],
 ): PlacementResult | null {
-  const zones = new Set(holes.map((h) => zoneOf(h.rowTrack)));
-  if (zones.size > 1) {
-    const spansOnlyTrench = zones.size === 2 && zones.has('terminal-top') && zones.has('terminal-bottom');
-    if (!spansOnlyTrench) {
+  const zones = [...new Set(holes.map((h) => zoneOf(h.rowTrack)))];
+  if (zones.length > 1) {
+    const isAdjacentPair = zones.length === 2 && ADJACENT_ZONE_PAIRS.has(zonePairKey(zones[0], zones[1]));
+    if (!isAdjacentPair) {
       return { valid: false, reason: 'Component cannot span multiple board zones' };
     }
   }
