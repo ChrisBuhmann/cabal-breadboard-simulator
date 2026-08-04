@@ -10,9 +10,11 @@ export type ComponentType =
   | 'to92'
   | 'dip8'
   | 'dip14'
-  | 'pot';
+  | 'pot'
+  | 'input-jack'
+  | 'output-jack';
 
-export type PackageKind = 'axial' | 'radial' | 'to92' | 'dip' | 'pot';
+export type PackageKind = 'axial' | 'radial' | 'to92' | 'dip' | 'pot' | 'jack';
 
 export interface ComponentDef {
   type: ComponentType;
@@ -201,6 +203,32 @@ export const COMPONENT_DEFS: Record<ComponentType, ComponentDef> = {
     defaultValue: '10k',
     straddlesTrench: false,
     flexible: false,
+    draggable: true,
+  },
+  'input-jack': {
+    type: 'input-jack',
+    label: 'Input Jack (TS Mono)',
+    packageKind: 'jack',
+    pinCount: 2,
+    basePins: line(2),
+    allowedRotations: [0, 90, 180, 270],
+    polarized: true,
+    defaultValue: 'IN',
+    straddlesTrench: false,
+    flexible: true,
+    draggable: true,
+  },
+  'output-jack': {
+    type: 'output-jack',
+    label: 'Output Jack (TS Mono)',
+    packageKind: 'jack',
+    pinCount: 2,
+    basePins: line(2),
+    allowedRotations: [0, 90, 180, 270],
+    polarized: true,
+    defaultValue: 'OUT',
+    straddlesTrench: false,
+    flexible: true,
     draggable: true,
   },
 };

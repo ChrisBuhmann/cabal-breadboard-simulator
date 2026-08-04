@@ -4,8 +4,9 @@ export interface KicadPin {
   /** Local symbol-space coordinates (mm), Y-up, as defined in the KiCad library. */
   x: number;
   y: number;
-  /** 1-based KiCad pin number this app's pin_index maps to. */
-  number: number;
+  /** KiCad pin number this app's pin_index maps to. Usually 1-based, but some
+   * connector symbols (e.g. AudioJack2) use letter designators like "T"/"S". */
+  number: number | string;
 }
 
 export interface KicadPartMapping {
@@ -129,6 +130,28 @@ export const KICAD_MAPPING: Record<ComponentType, KicadPartMapping> = {
       { x: 0, y: 3.81, number: 1 },
       { x: 3.81, y: 0, number: 2 }, // wiper
       { x: 0, y: -3.81, number: 3 },
+    ],
+  },
+  'input-jack': {
+    symbolName: 'AudioJack2',
+    libId: 'Connector_Audio:AudioJack2',
+    // Neutrik NJ2FD-V: standard 6.35mm (1/4") non-switching mono (TS) jack,
+    // the usual choice for a guitar pedal's in/out.
+    footprint: 'Connector_Audio:Jack_6.35mm_Neutrik_NJ2FD-V_Vertical',
+    refPrefix: 'J',
+    pins: [
+      { x: 5.08, y: 0, number: 'T' }, // pin 0 = tip (signal) (app) = pin T (KiCad)
+      { x: 5.08, y: 2.54, number: 'S' }, // pin 1 = sleeve (ground) (app) = pin S (KiCad)
+    ],
+  },
+  'output-jack': {
+    symbolName: 'AudioJack2',
+    libId: 'Connector_Audio:AudioJack2',
+    footprint: 'Connector_Audio:Jack_6.35mm_Neutrik_NJ2FD-V_Vertical',
+    refPrefix: 'J',
+    pins: [
+      { x: 5.08, y: 0, number: 'T' },
+      { x: 5.08, y: 2.54, number: 'S' },
     ],
   },
 };

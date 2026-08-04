@@ -62,6 +62,18 @@ function ComponentBadge({ type, value }: { type: ComponentType; value: string })
         </g>
       );
     }
+    case 'input-jack':
+    case 'output-jack': {
+      const isInput = type === 'input-jack';
+      return (
+        <g>
+          <circle cx={0} cy={0} r={BADGE_H * 0.8} fill={isInput ? '#3b7dff' : '#e0a83a'} stroke="#222" />
+          <text x={0} y={2.5} textAnchor="middle" fontSize={6} fill="#fff">
+            {isInput ? 'IN' : 'OUT'}
+          </text>
+        </g>
+      );
+    }
     default:
       return null;
   }

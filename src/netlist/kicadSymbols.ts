@@ -1,7 +1,8 @@
 /**
- * Verbatim `lib_symbols` bodies copied from KiCad's own Device.kicad_sym (v7),
- * keyed by the symbol name used in "Device:<name>" lib_ids. Embedding the full
- * graphical definition is how real KiCad schematics stay self-contained, so a
+ * Verbatim `lib_symbols` bodies copied from KiCad's own standard libraries
+ * (Device.kicad_sym and Connector_Audio.kicad_sym, v7), keyed by the symbol
+ * name used in "<Library>:<name>" lib_ids. Embedding the full graphical
+ * definition is how real KiCad schematics stay self-contained, so a
  * generated .kicad_sch never depends on the user's local library install.
  *
  * CabalGeneric_DIP8/DIP14 are hand-authored placeholders (no real 8/14-pin
@@ -386,6 +387,62 @@ export const KICAD_DEVICE_SYMBOLS: Record<string, string> = {
       (pin passive line (at 0 -3.81 90) (length 1.27)
         (name "3" (effects (font (size 1.27 1.27))))
         (number "3" (effects (font (size 1.27 1.27))))
+      )
+    )
+  )`,
+
+  AudioJack2: `  (symbol "AudioJack2" (in_bom yes) (on_board yes)
+    (property "Reference" "J" (at 0 8.89 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Value" "AudioJack2" (at 0 6.35 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "" (at 0 0 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "~" (at 0 0 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (symbol "AudioJack2_0_1"
+      (rectangle (start -3.81 0) (end -2.54 -2.54)
+        (stroke (width 0.254) (type default))
+        (fill (type outline))
+      )
+      (rectangle (start -2.54 3.81) (end 2.54 -2.54)
+        (stroke (width 0.254) (type default))
+        (fill (type background))
+      )
+      (polyline
+        (pts
+          (xy 0 0)
+          (xy 0.635 -0.635)
+          (xy 1.27 0)
+          (xy 2.54 0)
+        )
+        (stroke (width 0.254) (type default))
+        (fill (type none))
+      )
+      (polyline
+        (pts
+          (xy 2.54 2.54)
+          (xy -0.635 2.54)
+          (xy -0.635 0)
+          (xy -1.27 -0.635)
+          (xy -1.905 0)
+        )
+        (stroke (width 0.254) (type default))
+        (fill (type none))
+      )
+    )
+    (symbol "AudioJack2_1_1"
+      (pin passive line (at 5.08 2.54 180) (length 2.54)
+        (name "~" (effects (font (size 1.27 1.27))))
+        (number "S" (effects (font (size 1.27 1.27))))
+      )
+      (pin passive line (at 5.08 0 180) (length 2.54)
+        (name "~" (effects (font (size 1.27 1.27))))
+        (number "T" (effects (font (size 1.27 1.27))))
       )
     )
   )`,

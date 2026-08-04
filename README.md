@@ -98,6 +98,7 @@ libraries, not guessed from memory:
 | TO-92 (transistor/JFET)  | `Device:Q_NPN_EBC`   | `Package_TO_SOT_THT:TO-92_Inline` |
 | DIP-8 / DIP-14           | hand-authored generic placeholder (see below) | `Package_DIP:DIP-8_W7.62mm_Socket` / `DIP-14_W7.62mm_Socket` |
 | Potentiometer            | `Device:R_Potentiometer` | *(left blank — too many mechanical variants to guess)* |
+| Input / Output jack      | `Connector_Audio:AudioJack2` | `Connector_Audio:Jack_6.35mm_Neutrik_NJ2FD-V_Vertical` |
 
 Assumptions worth knowing about:
 
@@ -120,6 +121,13 @@ Assumptions worth knowing about:
   this app's pin 0 is the anode (see the "polarized" notes below), while
   KiCad's `D`/`LED` symbols number pin 1 as the cathode — the exporter
   accounts for the swap.
+- **Input/output jacks** map to `AudioJack2` (KiCad's 2-pole/mono-TS audio
+  connector symbol) with the pin numbers it actually uses — `"T"` (tip) and
+  `"S"` (sleeve), not plain 1/2 — and a real 1/4" Neutrik footprint common in
+  pedal builds. Both jack types share the same symbol/footprint, just
+  different reference/value text; they're otherwise ordinary 2-pin flexible
+  components, so pin 0 (tip/signal) and pin 1 (sleeve/ground) can go anywhere
+  a resistor's leads could, rail included.
 
 ## Component registry — assumptions
 
@@ -138,6 +146,7 @@ substitutes — swap these out if you have the real spec:
 | DIP-8                   | 8    | rigid, not draggable    | 4 cols × 2 rows; must anchor row `e`, straddling e/f; rotation locked to 0°/180° |
 | DIP-14                  | 14   | rigid, not draggable    | 7 cols × 2 rows; same straddle rule as DIP-8 |
 | Potentiometer           | 3    | rigid, draggable        | anchor + rotation, 1 hole apart; middle pin is the wiper |
+| Input / output jack     | 2    | flexible  | TS mono only (tip = signal, sleeve = ground); any two holes |
 
 **Flexible vs. rigid** (`ComponentDef.flexible` in `componentDefs.ts`): the
 2-lead parts with real wire leads are placed and stored as two independent
