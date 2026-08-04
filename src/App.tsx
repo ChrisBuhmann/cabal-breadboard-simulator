@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { generateBoard } from './board/boardGenerator';
 import type { BoardModel } from './board/boardTypes';
 import { BoardView, type Selection } from './board/BoardView';
-import { COMPONENT_DEFS } from './components/componentDefs';
+import { COMPONENT_DEFS, isFlexibleComponent } from './components/componentDefs';
 import { ComponentPalette } from './ui/ComponentPalette';
 import { NetlistDebugPanel } from './ui/NetlistDebugPanel';
 import { BoardConnectionsPanel } from './ui/BoardConnectionsPanel';
@@ -88,10 +88,14 @@ function AppInner() {
   const rotateSelection = useCallback(() => {
     if (!selection || selection.kind !== 'component') return;
     const comp = circuit.components.find((c) => c.id === selection.id);
-    if (!comp) return;
+    if (!comp || isFlexibleComponent(comp)) return;
     const def = COMPONENT_DEFS[comp.type];
     circuit.rotateComponent(comp.id, nextRotation(comp.rotation, def.allowedRotations));
   }, [selection, circuit]);
+
+  const selectedComponent =
+    selection?.kind === 'component' ? circuit.components.find((c) => c.id === selection.id) : undefined;
+  const canRotateSelected = !!selectedComponent && !isFlexibleComponent(selectedComponent);
 
   useEffect(() => {
     const isEditableTarget = (target: EventTarget | null) => {
@@ -150,13 +154,7 @@ function AppInner() {
           <button disabled={!circuit.canRedo} onClick={circuit.redo} title="Ctrl+Y / Ctrl+Shift+Z">
             Redo
           </button>
-          <button
-            disabled={!selection}
-            onClick={() => {
-              if (selection?.kind === 'component') rotateSelection();
-            }}
-            title="Alt+R"
-          >
+          <button disabled={!canRotateSelected} onClick={rotateSelection} title="Alt+R">
             Rotate Selected
           </button>
           <button disabled={!selection} onClick={deleteSelection}>

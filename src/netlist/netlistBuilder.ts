@@ -3,7 +3,7 @@ import type { PlacedComponent } from '../components/componentDefs';
 import type { Wire } from '../interaction/jumperSnap';
 import type { RailLink } from '../interaction/railLink';
 import { railNodeGroupIds } from '../interaction/railLink';
-import { resolvePinHoles } from '../interaction/snapLogic';
+import { resolveComponentPinHoles } from '../interaction/snapLogic';
 
 class UnionFind {
   private parent = new Map<string, string>();
@@ -74,7 +74,7 @@ export function buildNetlist(
   for (const comp of components) {
     const board = boardsById.get(comp.boardId);
     if (!board) continue;
-    const pinHoles = resolvePinHoles(board, comp.type, comp.anchorHoleId, comp.rotation);
+    const pinHoles = resolveComponentPinHoles(board, comp);
     if (!pinHoles) continue;
     pinHoles.forEach((hole, pinIndex) => {
       const root = uf.find(hole.nodeGroupId);

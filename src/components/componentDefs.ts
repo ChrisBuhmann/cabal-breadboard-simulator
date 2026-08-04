@@ -19,22 +19,49 @@ export interface ComponentDef {
   label: string;
   packageKind: PackageKind;
   pinCount: number;
-  /** Pin offsets relative to pin 0, at rotation 0. */
+  /** Pin offsets relative to pin 0, at rotation 0. Only meaningful for rigid
+   * (non-flexible) types - flexible types place each pin independently. */
   basePins: PinOffset[];
   allowedRotations: Rotation[];
   polarized: boolean;
   defaultValue: string;
   /** True only for packages allowed to straddle the trench (DIP-8/14). */
   straddlesTrench: boolean;
+  /** True for 2-lead parts with real wire leads (resistor, caps, diode, LED):
+   * placed as two independently-chosen pin holes of any distance/axis, like a
+   * bent lead, rather than a fixed span + rotation. False for packaged parts
+   * (TO-92, pot, DIP) whose pin spacing is physically fixed. */
+  flexible: boolean;
+  /** False only for DIP-8/14 - their rigid multi-row footprint can't be
+   * usefully repositioned by dragging (delete + re-place instead). */
+  draggable: boolean;
 }
 
-export interface PlacedComponent {
+/** Flexible parts (resistor, caps, diode, LED): each pin is placed in its own
+ * hole directly, any distance/axis apart - no rotation, no fixed span. */
+export interface FlexiblePlacedComponent {
   id: string;
   boardId: string;
   type: ComponentType;
+  value: string;
+  pinHoleIds: string[];
+}
+
+/** Rigid parts (TO-92, pot, DIP-8/14): fixed pin geometry, placed as an
+ * anchor hole + rotation, matching COMPONENT_DEFS[type].basePins. */
+export interface RigidPlacedComponent {
+  id: string;
+  boardId: string;
+  type: ComponentType;
+  value: string;
   anchorHoleId: string;
   rotation: Rotation;
-  value: string;
+}
+
+export type PlacedComponent = FlexiblePlacedComponent | RigidPlacedComponent;
+
+export function isFlexibleComponent(comp: PlacedComponent): comp is FlexiblePlacedComponent {
+  return COMPONENT_DEFS[comp.type].flexible;
 }
 
 const line = (n: number): PinOffset[] =>
@@ -56,6 +83,8 @@ export const COMPONENT_DEFS: Record<ComponentType, ComponentDef> = {
     polarized: false,
     defaultValue: '220',
     straddlesTrench: false,
+    flexible: true,
+    draggable: true,
   },
   'capacitor-film': {
     type: 'capacitor-film',
@@ -67,6 +96,8 @@ export const COMPONENT_DEFS: Record<ComponentType, ComponentDef> = {
     polarized: false,
     defaultValue: '100nF',
     straddlesTrench: false,
+    flexible: true,
+    draggable: true,
   },
   'capacitor-ceramic': {
     type: 'capacitor-ceramic',
@@ -78,6 +109,8 @@ export const COMPONENT_DEFS: Record<ComponentType, ComponentDef> = {
     polarized: false,
     defaultValue: '100nF',
     straddlesTrench: false,
+    flexible: true,
+    draggable: true,
   },
   'capacitor-electrolytic': {
     type: 'capacitor-electrolytic',
@@ -89,6 +122,8 @@ export const COMPONENT_DEFS: Record<ComponentType, ComponentDef> = {
     polarized: true,
     defaultValue: '10uF',
     straddlesTrench: false,
+    flexible: true,
+    draggable: true,
   },
   diode: {
     type: 'diode',
@@ -100,6 +135,8 @@ export const COMPONENT_DEFS: Record<ComponentType, ComponentDef> = {
     polarized: true,
     defaultValue: '1N4148',
     straddlesTrench: false,
+    flexible: true,
+    draggable: true,
   },
   led: {
     type: 'led',
@@ -111,6 +148,8 @@ export const COMPONENT_DEFS: Record<ComponentType, ComponentDef> = {
     polarized: true,
     defaultValue: 'red',
     straddlesTrench: false,
+    flexible: true,
+    draggable: true,
   },
   to92: {
     type: 'to92',
@@ -122,6 +161,8 @@ export const COMPONENT_DEFS: Record<ComponentType, ComponentDef> = {
     polarized: false,
     defaultValue: '2N3904',
     straddlesTrench: false,
+    flexible: false,
+    draggable: true,
   },
   dip8: {
     type: 'dip8',
@@ -133,6 +174,8 @@ export const COMPONENT_DEFS: Record<ComponentType, ComponentDef> = {
     polarized: false,
     defaultValue: 'DIP-8',
     straddlesTrench: true,
+    flexible: false,
+    draggable: false,
   },
   dip14: {
     type: 'dip14',
@@ -144,6 +187,8 @@ export const COMPONENT_DEFS: Record<ComponentType, ComponentDef> = {
     polarized: false,
     defaultValue: 'DIP-14',
     straddlesTrench: true,
+    flexible: false,
+    draggable: false,
   },
   pot: {
     type: 'pot',
@@ -155,6 +200,8 @@ export const COMPONENT_DEFS: Record<ComponentType, ComponentDef> = {
     polarized: false,
     defaultValue: '10k',
     straddlesTrench: false,
+    flexible: false,
+    draggable: true,
   },
 };
 

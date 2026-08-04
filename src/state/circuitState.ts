@@ -20,6 +20,8 @@ type Action =
   | { type: 'PLACE_COMPONENT'; component: PlacedComponent }
   | { type: 'REMOVE_COMPONENT'; id: string }
   | { type: 'ROTATE_COMPONENT'; id: string; rotation: Rotation }
+  | { type: 'MOVE_ANCHOR'; id: string; anchorHoleId: string }
+  | { type: 'SET_PIN_HOLES'; id: string; pinHoleIds: string[] }
   | { type: 'ADD_WIRE'; wire: Wire }
   | { type: 'REMOVE_WIRE'; id: string }
   | { type: 'ADD_RAIL_LINK'; railLink: RailLink }
@@ -54,6 +56,20 @@ function reducer(state: HistoryState, action: Action): HistoryState {
         ...state.present,
         components: state.present.components.map((c) =>
           c.id === action.id ? { ...c, rotation: action.rotation } : c,
+        ),
+      });
+    case 'MOVE_ANCHOR':
+      return withHistory(state, {
+        ...state.present,
+        components: state.present.components.map((c) =>
+          c.id === action.id ? { ...c, anchorHoleId: action.anchorHoleId } : c,
+        ),
+      });
+    case 'SET_PIN_HOLES':
+      return withHistory(state, {
+        ...state.present,
+        components: state.present.components.map((c) =>
+          c.id === action.id ? { ...c, pinHoleIds: action.pinHoleIds } : c,
         ),
       });
     case 'ADD_WIRE':
@@ -110,8 +126,11 @@ export interface CircuitApi {
   canUndo: boolean;
   canRedo: boolean;
   placeComponent: (boardId: string, type: ComponentType, anchorHoleId: string, rotation: Rotation, value: string) => void;
+  placeFlexibleComponent: (boardId: string, type: ComponentType, pinHoleIds: string[], value: string) => void;
   removeComponent: (id: string) => void;
   rotateComponent: (id: string, rotation: Rotation) => void;
+  moveAnchor: (id: string, anchorHoleId: string) => void;
+  setPinHoles: (id: string, pinHoleIds: string[]) => void;
   addWire: (wire: Wire) => void;
   removeWire: (id: string) => void;
   addRailLink: (railLink: RailLink) => void;
@@ -147,9 +166,27 @@ export function useCircuitProvider(): CircuitApi {
     [],
   );
 
+  const placeFlexibleComponent = useCallback(
+    (boardId: string, type: ComponentType, pinHoleIds: string[], value: string) => {
+      dispatch({
+        type: 'PLACE_COMPONENT',
+        component: { id: nextId('comp'), boardId, type, pinHoleIds, value },
+      });
+    },
+    [],
+  );
+
   const removeComponent = useCallback((id: string) => dispatch({ type: 'REMOVE_COMPONENT', id }), []);
   const rotateComponent = useCallback(
     (id: string, rotation: Rotation) => dispatch({ type: 'ROTATE_COMPONENT', id, rotation }),
+    [],
+  );
+  const moveAnchor = useCallback(
+    (id: string, anchorHoleId: string) => dispatch({ type: 'MOVE_ANCHOR', id, anchorHoleId }),
+    [],
+  );
+  const setPinHoles = useCallback(
+    (id: string, pinHoleIds: string[]) => dispatch({ type: 'SET_PIN_HOLES', id, pinHoleIds }),
     [],
   );
   const addWire = useCallback((wire: Wire) => dispatch({ type: 'ADD_WIRE', wire }), []);
@@ -169,8 +206,11 @@ export function useCircuitProvider(): CircuitApi {
       canUndo: state.past.length > 0,
       canRedo: state.future.length > 0,
       placeComponent,
+      placeFlexibleComponent,
       removeComponent,
       rotateComponent,
+      moveAnchor,
+      setPinHoles,
       addWire,
       removeWire,
       addRailLink,
@@ -183,8 +223,11 @@ export function useCircuitProvider(): CircuitApi {
     [
       state,
       placeComponent,
+      placeFlexibleComponent,
       removeComponent,
       rotateComponent,
+      moveAnchor,
+      setPinHoles,
       addWire,
       removeWire,
       addRailLink,

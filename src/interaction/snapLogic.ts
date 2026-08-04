@@ -1,6 +1,6 @@
 import type { BoardModel, Hole } from '../board/boardTypes';
 import { ROW_CODES, GRID_SIZE, zoneOf, holeId } from '../board/boardTypes';
-import { COMPONENT_DEFS, type ComponentType, type PlacedComponent } from '../components/componentDefs';
+import { COMPONENT_DEFS, isFlexibleComponent, type ComponentType, type PlacedComponent } from '../components/componentDefs';
 import { rotateOffset, type Rotation } from './rotation';
 
 export function findNearestHole(board: BoardModel, px: number, py: number, maxDist = GRID_SIZE * 0.6): Hole | null {
@@ -18,9 +18,21 @@ export function findNearestHole(board: BoardModel, px: number, py: number, maxDi
   return bestDist <= maxDist ? best : null;
 }
 
-/** Resolves the absolute holes a component would occupy for a given anchor + rotation.
- * Returns null if any pin falls off the board or lands on a gap (e.g. rail cosmetic gap). */
-export function resolvePinHoles(
+/** Same hole, offset by a row-track/column delta (not a rotation - used for
+ * translating a whole flexible component by the same amount on every pin).
+ * Returns null if the result falls off the board. */
+export function translateHole(board: BoardModel, hole: Hole, dRowTrack: number, dCol: number): Hole | null {
+  const rowTrack = hole.rowTrack + dRowTrack;
+  const col = hole.col + dCol;
+  if (rowTrack < 0 || rowTrack >= ROW_CODES.length) return null;
+  if (col < 1 || col > board.numCols) return null;
+  return board.holesById.get(holeId(board.id, ROW_CODES[rowTrack], col)) ?? null;
+}
+
+/** Resolves the absolute holes a *rigid* component (TO-92, pot, DIP) would occupy
+ * for a given anchor + rotation. Returns null if any pin falls off the board or
+ * lands on a gap (e.g. rail cosmetic gap). */
+export function resolveRigidPinHoles(
   board: BoardModel,
   type: ComponentType,
   anchorHoleId: string,
@@ -45,12 +57,47 @@ export function resolvePinHoles(
   return holes;
 }
 
+/** Resolves the absolute holes for any *placed* component, rigid or flexible. */
+export function resolveComponentPinHoles(board: BoardModel, comp: PlacedComponent): Hole[] | null {
+  if (isFlexibleComponent(comp)) {
+    const holes = comp.pinHoleIds.map((id) => board.holesById.get(id));
+    return holes.every((h): h is Hole => h !== undefined) ? holes : null;
+  }
+  return resolveRigidPinHoles(board, comp.type, comp.anchorHoleId, comp.rotation);
+}
+
 export interface PlacementResult {
   valid: boolean;
   pinHoleIds?: string[];
   reason?: string;
 }
 
+/** Shared by both placement paths: rejects spans into more than the top/bottom
+ * terminal zones, and rejects any hole already occupied by another component. */
+function checkZonesAndOccupancy(
+  board: BoardModel,
+  holes: Hole[],
+  existingComponents: PlacedComponent[],
+): PlacementResult | null {
+  const zones = new Set(holes.map((h) => zoneOf(h.rowTrack)));
+  if (zones.size > 1) {
+    const spansOnlyTrench = zones.size === 2 && zones.has('terminal-top') && zones.has('terminal-bottom');
+    if (!spansOnlyTrench) {
+      return { valid: false, reason: 'Component cannot span multiple board zones' };
+    }
+  }
+
+  const occupied = occupiedHoleIds(existingComponents, board);
+  for (const hole of holes) {
+    if (occupied.has(hole.id)) {
+      return { valid: false, reason: `Hole ${hole.id} is already occupied` };
+    }
+  }
+  return null;
+}
+
+/** Validates placing (or moving) a rigid component. To validate a move, pass
+ * `existingComponents` with the component being moved already filtered out. */
 export function validatePlacement(
   board: BoardModel,
   existingComponents: PlacedComponent[],
@@ -64,17 +111,13 @@ export function validatePlacement(
     return { valid: false, reason: `${def.label} cannot be rotated to ${rotation}°` };
   }
 
-  const pinHoles = resolvePinHoles(board, type, anchorHoleId, rotation);
+  const pinHoles = resolveRigidPinHoles(board, type, anchorHoleId, rotation);
   if (!pinHoles) {
     return { valid: false, reason: 'Placement falls off the board' };
   }
 
-  const zones = new Set(pinHoles.map((h) => zoneOf(h.rowTrack)));
-
   // DIP packages are rigid (fixed 2-row footprint), so their straddle only makes
-  // physical sense anchored exactly on row e. Flexible-lead parts (resistors,
-  // diodes, etc.) can bend to cross the trench at any row/rotation that happens
-  // to land their pins in both terminal zones - no anchor restriction needed.
+  // physical sense anchored exactly on row e. TO-92/pot have no such restriction.
   if (def.straddlesTrench) {
     const anchor = board.holesById.get(anchorHoleId)!;
     if (anchor.row !== 'e') {
@@ -82,27 +125,45 @@ export function validatePlacement(
     }
   }
 
-  if (zones.size > 1) {
-    const spansOnlyTrench = zones.size === 2 && zones.has('terminal-top') && zones.has('terminal-bottom');
-    if (!spansOnlyTrench) {
-      return { valid: false, reason: 'Component cannot span multiple board zones' };
-    }
-  }
-
-  const occupied = occupiedHoleIds(existingComponents, board);
-  for (const hole of pinHoles) {
-    if (occupied.has(hole.id)) {
-      return { valid: false, reason: `Hole ${hole.id} is already occupied` };
-    }
-  }
+  const problem = checkZonesAndOccupancy(board, pinHoles, existingComponents);
+  if (problem) return problem;
 
   return { valid: true, pinHoleIds: pinHoles.map((h) => h.id) };
+}
+
+/** Validates placing (or moving) a flexible-lead component's pins directly.
+ * To validate a move (whole-body drag or single-leg drag), pass
+ * `existingComponents` with the component being moved already filtered out. */
+export function validateFlexiblePlacement(
+  board: BoardModel,
+  existingComponents: PlacedComponent[],
+  type: ComponentType,
+  pinHoleIds: string[],
+): PlacementResult {
+  const def = COMPONENT_DEFS[type];
+
+  if (pinHoleIds.length !== def.pinCount) {
+    return { valid: false, reason: `${def.label} needs ${def.pinCount} pin holes` };
+  }
+  if (new Set(pinHoleIds).size !== pinHoleIds.length) {
+    return { valid: false, reason: 'A component cannot use the same hole for two pins' };
+  }
+
+  const holes = pinHoleIds.map((id) => board.holesById.get(id));
+  if (holes.some((h) => !h)) {
+    return { valid: false, reason: 'Placement falls off the board' };
+  }
+
+  const problem = checkZonesAndOccupancy(board, holes as Hole[], existingComponents);
+  if (problem) return problem;
+
+  return { valid: true, pinHoleIds };
 }
 
 export function occupiedHoleIds(components: PlacedComponent[], board: BoardModel): Set<string> {
   const set = new Set<string>();
   for (const comp of components) {
-    const pins = resolvePinHoles(board, comp.type, comp.anchorHoleId, comp.rotation);
+    const pins = resolveComponentPinHoles(board, comp);
     pins?.forEach((h) => set.add(h.id));
   }
   return set;

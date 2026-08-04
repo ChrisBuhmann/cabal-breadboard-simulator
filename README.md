@@ -27,12 +27,22 @@ npm run dev
 - **Components** (`src/components`): a small registry (`componentDefs.ts`) defines
   each component type as pin offsets + allowed rotations + package kind. Each
   package has its own SVG renderer in `componentRender/`.
-- **Interaction** (`src/interaction`): drag-and-drop (HTML5 DnD) and click-to-place
-  both funnel through the same placement validator, which checks pin holes are
-  empty and package-appropriate (e.g. DIP packages must anchor on row `e` and
-  straddle the trench to row `f`; only DIP packages are allowed to span the
-  top/bottom terminal zones at all). Jumper wires snap to preset lengths
-  (1/2/3/4/6/8/10 holes) along whichever axis (row or column) the drag is closer to.
+- **Interaction** (`src/interaction`): two placement models, matching how real
+  parts actually behave. **Flexible-lead parts** (resistor, film/ceramic/
+  electrolytic capacitor, diode, LED) are placed like a jumper wire — click or
+  drag from one hole to another, any distance or axis, and the lead stretches
+  to match, same as bending a real wire lead to reach wherever you need. **Rigid
+  packaged parts** (TO-92, potentiometer, DIP-8/14) keep a fixed pin geometry
+  (`COMPONENT_DEFS[type].basePins`) placed as an anchor hole + rotation, since
+  their real lead spacing can't change. Both funnel through the same
+  zone/occupancy validator (`snapLogic.ts`). Once selected, a placed component
+  can be repositioned: flexible parts show small drag handles at each pin for
+  moving one lead independently, or drag the body to move both together;
+  TO-92/pot can be dragged as a whole (same rigid geometry, new anchor); DIP-8/14
+  can't be dragged (delete and re-place instead) since a rigid multi-row
+  footprint has nowhere sensible to "slide" it. Jumper wires snap to preset
+  lengths (1/2/3/4/6/8/10 holes) along whichever axis (row or column) the drag
+  is closer to.
 - **Netlist** (`src/netlist`): a union-find over node groups. Wires union two
   node groups; components don't need to union anything themselves, since every pin
   in a hole is already implicitly connected to that hole's node group. The result
@@ -114,37 +124,45 @@ Assumptions worth knowing about:
 ## Component registry — assumptions
 
 The task spec referenced a "component registry" pin-geometry block that wasn't
-actually included. Pin geometries below were chosen to be physically plausible
+actually included. Details below were chosen to be physically plausible
 substitutes — swap these out if you have the real spec:
 
-| Component              | Pins | Span (grid holes)        | Notes |
-|-------------------------|------|---------------------------|-------|
-| Resistor                | 2    | 4                          | axial |
-| Film / ceramic capacitor| 2    | 2                          | radial |
-| Electrolytic capacitor  | 2    | 2                          | polarized, radial |
-| Diode                   | 2    | 3                          | polarized (cathode band) |
-| LED                     | 2    | 2                          | polarized (flat side = cathode) |
-| TO-92 (transistor/JFET) | 3    | 2 (3 pins, 1 hole apart)   | single row |
-| DIP-8                   | 8    | 4 cols × 2 rows            | must straddle rows e/f, rotation locked to 0°/180° |
-| DIP-14                  | 14   | 7 cols × 2 rows            | same straddle rule as DIP-8 |
-| Potentiometer           | 3    | 2 (3 pins, 1 hole apart)   | single row; middle pin is the wiper |
+| Component              | Pins | Placement | Notes |
+|-------------------------|------|-----------|-------|
+| Resistor                | 2    | flexible  | any two holes, any distance/axis |
+| Film / ceramic capacitor| 2    | flexible  | any two holes, any distance/axis |
+| Electrolytic capacitor  | 2    | flexible  | polarized (pin 0 = +); any two holes |
+| Diode                   | 2    | flexible  | polarized (pin 0 = anode); any two holes |
+| LED                     | 2    | flexible  | polarized (pin 0 = anode); any two holes |
+| TO-92 (transistor/JFET) | 3    | rigid, draggable        | anchor + rotation, 1 hole apart; assumes E-B-C left-to-right |
+| DIP-8                   | 8    | rigid, not draggable    | 4 cols × 2 rows; must anchor row `e`, straddling e/f; rotation locked to 0°/180° |
+| DIP-14                  | 14   | rigid, not draggable    | 7 cols × 2 rows; same straddle rule as DIP-8 |
+| Potentiometer           | 3    | rigid, draggable        | anchor + rotation, 1 hole apart; middle pin is the wiper |
 
-DIP pin numbering here goes left-to-right along the top row (pins 0..n/2-1) then
-left-to-right along the bottom row (pins n/2..n-1) — a simplification of real-world
-DIP pin-1-at-notch numbering, since only relative position (not real silkscreen
-numbering) matters for netlist derivation in this phase.
+**Flexible vs. rigid** (`ComponentDef.flexible` in `componentDefs.ts`): the
+2-lead parts with real wire leads are placed and stored as two independent
+`pinHoleIds`, exactly like a jumper wire, since a real lead can be bent to any
+length. The packaged parts (TO-92, pot, DIP) have genuinely fixed pin spacing,
+so they keep the original anchor-hole + rotation model
+(`RigidPlacedComponent`) and a fixed `basePins` offset table.
 
-Rotation is implemented as a genuine coordinate rotation of pin offsets (matching
-the SVG `rotate()` transform applied to each component's artwork), so hole-snapping
-and rendering always agree. Non-DIP components allow all four 90° rotations; DIP
-packages only allow 0°/180°, since a real DIP's straddle is fixed by its package,
-not something free rotation could produce.
+DIP pin numbering goes left-to-right along the top row (pins 0..n/2-1) then
+left-to-right along the bottom row (pins n/2..n-1) — a simplification of
+real-world DIP pin-1-at-notch numbering, since only relative position (not
+real silkscreen numbering) matters for netlist derivation in this phase.
+
+Rotation (rigid parts only) is a genuine coordinate rotation of pin offsets
+(matching the SVG `rotate()` transform applied to each component's artwork),
+so hole-snapping and rendering always agree. TO-92/pot allow all four 90°
+rotations; DIP packages only allow 0°/180°, since a real DIP's straddle is
+fixed by its package, not something free rotation could produce. Flexible
+parts have no rotation at all — their angle is whatever the line between
+their two chosen holes happens to be.
 
 **Trench crossing**: any component — not just DIPs — is allowed to span the
 top/bottom terminal zones (e.g. a resistor bent to jump from row c to row g),
 matching how real leaded parts get built on a breadboard. DIP packages still
 must anchor exactly on row `e`, since their footprint is rigid and only lines
-up with the trench from that one anchor; flexible-lead parts have no such
-restriction and can straddle from whatever row/rotation their pins land on, as
-long as both zones are the top/bottom terminal strips (spanning into a rail
-zone is still rejected).
+up with the trench from that one anchor; other parts have no such restriction
+and can straddle from wherever their pins land, as long as both zones are the
+top/bottom terminal strips (spanning into a rail zone is still rejected).

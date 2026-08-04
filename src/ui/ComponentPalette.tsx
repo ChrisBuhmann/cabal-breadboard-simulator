@@ -21,7 +21,10 @@ export function ComponentPalette({ pending, onArm, onCancelPending, onRotatePend
   return (
     <div className="palette">
       <h2>Components</h2>
-      <p className="palette-hint">Drag onto the board, or click to arm and click a hole to place.</p>
+      <p className="palette-hint">
+        Drag onto the board, or click to arm — then click a hole (rigid parts) or drag between two
+        holes (flexible leads) to place.
+      </p>
       {COMPONENT_TYPES.map((type) => {
         const def = COMPONENT_DEFS[type];
         const Visual = COMPONENT_RENDERERS[type];
@@ -59,9 +62,10 @@ export function ComponentPalette({ pending, onArm, onCancelPending, onRotatePend
       {pending && (
         <div className="pending-bar">
           <span>
-            Placing {COMPONENT_DEFS[pending.type].label} @ {pending.rotation}°
+            Placing {COMPONENT_DEFS[pending.type].label}
+            {!COMPONENT_DEFS[pending.type].flexible && ` @ ${pending.rotation}°`}
           </span>
-          <button onClick={onRotatePending}>Rotate</button>
+          {!COMPONENT_DEFS[pending.type].flexible && <button onClick={onRotatePending}>Rotate</button>}
           <button onClick={onCancelPending}>Cancel</button>
         </div>
       )}

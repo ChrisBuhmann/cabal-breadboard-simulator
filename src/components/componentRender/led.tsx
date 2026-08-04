@@ -1,12 +1,5 @@
 import { GRID_SIZE } from '../../board/boardTypes';
-
-const LED_COLORS: Record<string, string> = {
-  red: '#ff3b3b',
-  green: '#3bff5e',
-  blue: '#3b7dff',
-  yellow: '#fff53b',
-  white: '#f5f5f5',
-};
+import { LED_COLORS } from '../ledColors';
 
 /** Pin 0 = anode (long leg), pin 1 = cathode (flat side). */
 export function LedSVG({ value }: { value: string }) {
