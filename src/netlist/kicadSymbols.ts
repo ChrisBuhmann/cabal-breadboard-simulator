@@ -5,6 +5,14 @@
  * definition is how real KiCad schematics stay self-contained, so a
  * generated .kicad_sch never depends on the user's local library install.
  *
+ * Naming convention (confirmed against real KiCad 7 eeschema, not guessed):
+ * the top-level embedded symbol name must be library-qualified
+ * ("Device:R") to match the placed instance's lib_id, or KiCad shows an
+ * unresolved "??" placeholder instead of the symbol body. The nested
+ * sub-unit symbols underneath it ("R_0_1", "R_1_1") must stay bare --
+ * qualifying those too makes KiCad reject the whole file with "Invalid
+ * symbol unit name prefix".
+ *
  * CabalGeneric_DIP8/DIP14 are hand-authored placeholders (no real 8/14-pin
  * device is known from a breadboard placement alone) with pins on the top and
  * bottom edges, left-to-right, matching this app's own DIP pin ordering
@@ -13,7 +21,7 @@
  */
 
 export const KICAD_DEVICE_SYMBOLS: Record<string, string> = {
-  R: `  (symbol "R" (pin_numbers hide) (pin_names (offset 0)) (in_bom yes) (on_board yes)
+  R: `  (symbol "Device:R" (pin_numbers hide) (pin_names (offset 0)) (in_bom yes) (on_board yes)
     (property "Reference" "R" (at 2.032 0 90)
       (effects (font (size 1.27 1.27)))
     )
@@ -44,7 +52,7 @@ export const KICAD_DEVICE_SYMBOLS: Record<string, string> = {
     )
   )`,
 
-  C: `  (symbol "C" (pin_numbers hide) (pin_names (offset 0.254)) (in_bom yes) (on_board yes)
+  C: `  (symbol "Device:C" (pin_numbers hide) (pin_names (offset 0.254)) (in_bom yes) (on_board yes)
     (property "Reference" "C" (at 0.635 2.54 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
@@ -87,7 +95,7 @@ export const KICAD_DEVICE_SYMBOLS: Record<string, string> = {
     )
   )`,
 
-  C_Polarized: `  (symbol "C_Polarized" (pin_numbers hide) (pin_names (offset 0.254)) (in_bom yes) (on_board yes)
+  C_Polarized: `  (symbol "Device:C_Polarized" (pin_numbers hide) (pin_names (offset 0.254)) (in_bom yes) (on_board yes)
     (property "Reference" "C" (at 0.635 2.54 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
@@ -138,7 +146,7 @@ export const KICAD_DEVICE_SYMBOLS: Record<string, string> = {
     )
   )`,
 
-  D: `  (symbol "D" (pin_numbers hide) (pin_names (offset 1.016) hide) (in_bom yes) (on_board yes)
+  D: `  (symbol "Device:D" (pin_numbers hide) (pin_names (offset 1.016) hide) (in_bom yes) (on_board yes)
     (property "Reference" "D" (at 0 2.54 0)
       (effects (font (size 1.27 1.27)))
     )
@@ -191,7 +199,7 @@ export const KICAD_DEVICE_SYMBOLS: Record<string, string> = {
     )
   )`,
 
-  LED: `  (symbol "LED" (pin_numbers hide) (pin_names (offset 1.016) hide) (in_bom yes) (on_board yes)
+  LED: `  (symbol "Device:LED" (pin_numbers hide) (pin_names (offset 1.016) hide) (in_bom yes) (on_board yes)
     (property "Reference" "D" (at 0 2.54 0)
       (effects (font (size 1.27 1.27)))
     )
@@ -266,7 +274,7 @@ export const KICAD_DEVICE_SYMBOLS: Record<string, string> = {
     )
   )`,
 
-  Q_NPN_EBC: `  (symbol "Q_NPN_EBC" (pin_names (offset 0) hide) (in_bom yes) (on_board yes)
+  Q_NPN_EBC: `  (symbol "Device:Q_NPN_EBC" (pin_names (offset 0) hide) (in_bom yes) (on_board yes)
     (property "Reference" "Q" (at 5.08 1.27 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
@@ -338,7 +346,7 @@ export const KICAD_DEVICE_SYMBOLS: Record<string, string> = {
     )
   )`,
 
-  R_Potentiometer: `  (symbol "R_Potentiometer" (pin_names (offset 1.016) hide) (in_bom yes) (on_board yes)
+  R_Potentiometer: `  (symbol "Device:R_Potentiometer" (pin_names (offset 1.016) hide) (in_bom yes) (on_board yes)
     (property "Reference" "RV" (at -4.445 0 90)
       (effects (font (size 1.27 1.27)))
     )
@@ -391,7 +399,7 @@ export const KICAD_DEVICE_SYMBOLS: Record<string, string> = {
     )
   )`,
 
-  AudioJack2: `  (symbol "AudioJack2" (in_bom yes) (on_board yes)
+  AudioJack2: `  (symbol "Connector_Audio:AudioJack2" (in_bom yes) (on_board yes)
     (property "Reference" "J" (at 0 8.89 0)
       (effects (font (size 1.27 1.27)))
     )
@@ -456,8 +464,14 @@ function dipPinBlock(number: number, x: number, y: number, angle: 90 | 270): str
 }
 
 /** Generic N-pin DIP placeholder: pins on top/bottom edges, left-to-right, matching
- * this app's own top-row-then-bottom-row pin ordering (componentDefs.ts's dipPins). */
-function genericDipSymbol(name: string, halfWidth: number): string {
+ * this app's own top-row-then-bottom-row pin ordering (componentDefs.ts's dipPins).
+ *
+ * `libId` (e.g. "CabalGeneric:CabalGeneric_DIP8") names the top-level embedded
+ * symbol, matching the placed instance's lib_id -- but the nested sub-unit
+ * symbols (KiCad's "<name>_<unit>_<style>" convention) must use the bare
+ * `name`, not the library-qualified id, or KiCad rejects the file with
+ * "Invalid symbol unit name prefix" (confirmed against real KiCad 7 eeschema). */
+function genericDipSymbol(libId: string, name: string, halfWidth: number): string {
   const pitch = 2.54;
   const xs = Array.from({ length: halfWidth }, (_, i) => (i - (halfWidth - 1) / 2) * pitch);
   const rectHalfWidth = Math.abs(xs[0]) + pitch / 2;
@@ -465,7 +479,7 @@ function genericDipSymbol(name: string, halfWidth: number): string {
   const topPins = xs.map((x, i) => dipPinBlock(i + 1, x, 6.35, 270)).join('\n');
   const bottomPins = xs.map((x, i) => dipPinBlock(halfWidth + i + 1, x, -6.35, 90)).join('\n');
 
-  return `  (symbol "${name}" (pin_numbers hide) (pin_names (offset 0.508)) (in_bom yes) (on_board yes)
+  return `  (symbol "${libId}" (pin_numbers hide) (pin_names (offset 0.508)) (in_bom yes) (on_board yes)
     (property "Reference" "U" (at 0 8.89 0)
       (effects (font (size 1.27 1.27)))
     )
@@ -494,5 +508,5 @@ ${bottomPins}
   )`;
 }
 
-export const KICAD_GENERIC_DIP8 = genericDipSymbol('CabalGeneric_DIP8', 4);
-export const KICAD_GENERIC_DIP14 = genericDipSymbol('CabalGeneric_DIP14', 7);
+export const KICAD_GENERIC_DIP8 = genericDipSymbol('CabalGeneric:CabalGeneric_DIP8', 'CabalGeneric_DIP8', 4);
+export const KICAD_GENERIC_DIP14 = genericDipSymbol('CabalGeneric:CabalGeneric_DIP14', 'CabalGeneric_DIP14', 7);
