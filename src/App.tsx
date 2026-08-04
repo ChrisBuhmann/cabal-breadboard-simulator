@@ -222,7 +222,13 @@ function AppInner() {
           ))}
         </main>
 
-        <NetlistDebugPanel netlist={netlist} open={debugOpen} onToggle={() => setDebugOpen((o) => !o)} />
+        <NetlistDebugPanel
+          netlist={netlist}
+          boards={boards}
+          components={circuit.components}
+          open={debugOpen}
+          onToggle={() => setDebugOpen((o) => !o)}
+        />
       </div>
     </div>
   );

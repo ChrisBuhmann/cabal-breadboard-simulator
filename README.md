@@ -40,6 +40,66 @@ npm run dev
   visible live in the debug panel (toggle top-right).
 - **State** (`src/state`): a single reducer holds placed components + wires, with a
   snapshot-based undo/redo stack and localStorage save/load.
+- **Keyboard shortcuts**: `Ctrl+Z` undo, `Ctrl+Y` / `Ctrl+Shift+Z` redo, `Alt+R`
+  (or plain `R`) rotate the selected/pending component, `Delete`/`Backspace` delete
+  selection, `Escape` clear selection/pending placement. Disabled while a text
+  field has focus.
+- **Multiple breadboards**: "Add Breadboard" stacks additional independent boards
+  vertically. Hole ids and node-group ids are namespaced per board (`board-2:e5`),
+  so placements/wires/netlists never cross boards; the netlist debug panel
+  aggregates all boards' nets together.
+- **Dark theme**: manual toggle (top-right), persisted to `localStorage`, applied
+  before first paint. Defaults to the OS preference.
+
+## KiCad schematic export
+
+"Export KiCad Schematic" (in the netlist debug panel) generates a `.kicad_sch`
+file: one KiCad symbol per placed component, laid out in a plain grid (not a
+copy of the breadboard layout), with each pin wired to a short stub ending in a
+`global_label` named after its netlist node. Nets connect by matching label
+name rather than by point-to-point routing — the standard KiCad approach for
+netlist-driven schematics, and it avoids a rat's nest of crossing wires. Open
+the file in KiCad and rearrange/relabel as needed; the connectivity is already
+correct, only the layout is rough.
+
+Since this app only ever produces a handful of standard through-hole part
+types (typical of DIY pedal builds), each `ComponentType` maps to one specific
+KiCad `Device:` library symbol rather than trying to cover KiCad's whole
+catalog — verified against the real KiCad 7 `Device.kicad_sym`/footprint
+libraries, not guessed from memory:
+
+| Component               | KiCad symbol         | Footprint |
+|--------------------------|----------------------|-----------|
+| Resistor                 | `Device:R`           | `Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal` |
+| Film / ceramic capacitor | `Device:C`           | `Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P5.00mm` |
+| Electrolytic capacitor   | `Device:C_Polarized` | `Capacitor_THT:CP_Radial_D5.0mm_P2.00mm` |
+| Diode                    | `Device:D`           | `Diode_THT:D_DO-35_SOD27_P10.16mm_Horizontal` |
+| LED                      | `Device:LED`         | `LED_THT:LED_D5.0mm` |
+| TO-92 (transistor/JFET)  | `Device:Q_NPN_EBC`   | `Package_TO_SOT_THT:TO-92_Inline` |
+| DIP-8 / DIP-14           | hand-authored generic placeholder (see below) | `Package_DIP:DIP-8_W7.62mm_Socket` / `DIP-14_W7.62mm_Socket` |
+| Potentiometer            | `Device:R_Potentiometer` | *(left blank — too many mechanical variants to guess)* |
+
+Assumptions worth knowing about:
+
+- **TO-92 pinout** assumes the standard E-B-C left-to-right layout that matches
+  this app's default value ("2N3904"). If you actually used a PNP, a JFET, or
+  anything with a different pinout, the generated symbol's pin functions will
+  be wrong even though the *netlist connectivity* (which physical pins tie to
+  which nets) is still correct — swap in the real part's symbol and re-map by
+  hand.
+- **DIP-8/14** use a hand-authored generic rectangle symbol (embedded directly
+  in the file, not from any real library) since a breadboard placement alone
+  doesn't tell us which real IC you used. Its pins are numbered top row
+  left-to-right then bottom row left-to-right — matching this app's own DIP
+  pin ordering (see below), *not* real DIP silkscreen numbering. Once you know
+  the real chip (an op-amp, most likely, for pedal builds), swap in its real
+  symbol.
+- **Potentiometer footprint** is left blank since pedal pots vary widely
+  (PCB-mount vs. lug/wire, 9mm/16mm/24mm body) — pick the right one in KiCad.
+- Diode/LED pin mapping is intentionally *not* a simple index+1 mapping:
+  this app's pin 0 is the anode (see the "polarized" notes below), while
+  KiCad's `D`/`LED` symbols number pin 1 as the cathode — the exporter
+  accounts for the swap.
 
 ## Component registry — assumptions
 
