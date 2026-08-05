@@ -248,19 +248,50 @@ export function useCircuit(): CircuitApi {
   return ctx;
 }
 
-const STORAGE_KEY = 'cabal-breadboard-circuit';
-
-export function saveCircuitToStorage(snapshot: CircuitSnapshot) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+function normalizeSnapshot(parsed: Partial<CircuitSnapshot>): CircuitSnapshot {
+  return { components: parsed.components ?? [], wires: parsed.wires ?? [], railLinks: parsed.railLinks ?? [] };
 }
 
-export function loadCircuitFromStorage(): CircuitSnapshot | null {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return null;
+/**
+ * Named, multi-slot design storage - a single localStorage key holding a
+ * {name: snapshot} map, so saving a new design doesn't clobber the last one.
+ * This only persists per browser profile on one machine; see designFile.ts
+ * for the file-based export/import that survives a cleared cache, a new
+ * machine, or just wanting a durable copy outside the browser.
+ */
+const DESIGNS_STORAGE_KEY = 'cabal-breadboard-designs';
+
+function readDesignsMap(): Record<string, CircuitSnapshot> {
+  const raw = localStorage.getItem(DESIGNS_STORAGE_KEY);
+  if (!raw) return {};
   try {
-    const parsed = JSON.parse(raw) as Partial<CircuitSnapshot>;
-    return { components: parsed.components ?? [], wires: parsed.wires ?? [], railLinks: parsed.railLinks ?? [] };
+    return JSON.parse(raw) as Record<string, CircuitSnapshot>;
   } catch {
-    return null;
+    return {};
   }
+}
+
+function writeDesignsMap(map: Record<string, CircuitSnapshot>) {
+  localStorage.setItem(DESIGNS_STORAGE_KEY, JSON.stringify(map));
+}
+
+export function listSavedDesignNames(): string[] {
+  return Object.keys(readDesignsMap()).sort((a, b) => a.localeCompare(b));
+}
+
+export function saveNamedDesign(name: string, snapshot: CircuitSnapshot) {
+  const map = readDesignsMap();
+  map[name] = snapshot;
+  writeDesignsMap(map);
+}
+
+export function loadNamedDesign(name: string): CircuitSnapshot | null {
+  const found = readDesignsMap()[name];
+  return found ? normalizeSnapshot(found) : null;
+}
+
+export function deleteNamedDesign(name: string) {
+  const map = readDesignsMap();
+  delete map[name];
+  writeDesignsMap(map);
 }

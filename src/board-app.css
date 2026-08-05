@@ -48,6 +48,45 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
+.design-manager {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-bg);
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.design-manager button {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  border-radius: 4px;
+  color: var(--text);
+}
+
+.design-name-input {
+  font: inherit;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel-bg);
+  color: var(--text);
+  width: 160px;
+}
+
+.design-select {
+  font: inherit;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel-bg);
+  color: var(--text);
+  max-width: 200px;
+}
+
 .board-connections {
   display: flex;
   align-items: center;

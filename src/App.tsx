@@ -6,14 +6,9 @@ import { COMPONENT_DEFS, isFlexibleComponent } from './components/componentDefs'
 import { ComponentPalette } from './ui/ComponentPalette';
 import { NetlistDebugPanel } from './ui/NetlistDebugPanel';
 import { BoardConnectionsPanel } from './ui/BoardConnectionsPanel';
+import { DesignManagerPanel } from './ui/DesignManagerPanel';
 import { buildNetlist } from './netlist/netlistBuilder';
-import {
-  CircuitContext,
-  loadCircuitFromStorage,
-  saveCircuitToStorage,
-  useCircuit,
-  useCircuitProvider,
-} from './state/circuitState';
+import { CircuitContext, useCircuit, useCircuitProvider, type CircuitSnapshot } from './state/circuitState';
 import { nextRotation } from './interaction/rotation';
 import { rotatePendingValue, type DragPayload } from './interaction/dragDrop';
 import './board-app.css';
@@ -72,6 +67,18 @@ function AppInner() {
     () => buildNetlist(boards, circuit.components, circuit.wires, circuit.railLinks),
     [boards, circuit.components, circuit.wires, circuit.railLinks],
   );
+
+  /** Shared by the design manager's "Load" and "Import File" actions - both
+   * hand back a full snapshot that needs the same board-recreation step a
+   * fresh page load doesn't. */
+  const loadSnapshot = (snapshot: CircuitSnapshot) => {
+    circuit.load(snapshot);
+    ensureBoardsFor([
+      ...snapshot.components.map((c) => c.boardId),
+      ...snapshot.wires.map((w) => w.boardId),
+      ...snapshot.railLinks.flatMap((r) => [r.boardAId, r.boardBId]),
+    ]);
+  };
 
   const flash = (msg: string) => {
     setMessage(msg);
@@ -162,32 +169,6 @@ function AppInner() {
           </button>
           <button
             onClick={() => {
-              saveCircuitToStorage({ components: circuit.components, wires: circuit.wires, railLinks: circuit.railLinks });
-              flash('Circuit saved');
-            }}
-          >
-            Save
-          </button>
-          <button
-            onClick={() => {
-              const snap = loadCircuitFromStorage();
-              if (snap) {
-                circuit.load(snap);
-                ensureBoardsFor([
-                  ...snap.components.map((c) => c.boardId),
-                  ...snap.wires.map((w) => w.boardId),
-                  ...snap.railLinks.flatMap((r) => [r.boardAId, r.boardBId]),
-                ]);
-                flash('Circuit loaded');
-              } else {
-                flash('No saved circuit found');
-              }
-            }}
-          >
-            Load
-          </button>
-          <button
-            onClick={() => {
               circuit.reset();
               flash('Board cleared');
             }}
@@ -202,6 +183,15 @@ function AppInner() {
       </header>
 
       {message && <div className="toast">{message}</div>}
+
+      <DesignManagerPanel
+        snapshot={{ components: circuit.components, wires: circuit.wires, railLinks: circuit.railLinks }}
+        onLoad={(snapshot) => {
+          loadSnapshot(snapshot);
+          setSelection(null);
+        }}
+        flash={flash}
+      />
 
       {boards.length > 1 && (
         <BoardConnectionsPanel
