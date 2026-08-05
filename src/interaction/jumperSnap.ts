@@ -48,12 +48,24 @@ export function computeJumperEnd(board: BoardModel, start: Hole, px: number, py:
 
   const axis: 'row' | 'col' = Math.abs(dx) >= Math.abs(dy) ? 'col' : 'row';
   const sign: 1 | -1 = (axis === 'col' ? dx : dy) >= 0 ? 1 : -1;
-  const targetDistHoles = axis === 'col' ? Math.abs(dx) / GRID_SIZE : Math.abs(dy) / GRID_SIZE;
+  const targetDist = axis === 'col' ? Math.abs(dx) : Math.abs(dy);
 
   const candidates = candidatesForAxis(board, start, axis, sign);
   if (candidates.length === 0) return null;
 
-  candidates.sort((a, b) => Math.abs(a.span - targetDistHoles) - Math.abs(b.span - targetDistHoles));
+  // Compare against each candidate's own actual rendered distance from `start`,
+  // not its abstract span number. Row spacing isn't uniform in span-index terms:
+  // the rail<->nearest-terminal-row gap and the top/bottom trench each render at
+  // double the normal row pitch (see ROW_TRACK_Y), so a hole that's 1 span away
+  // can be 2 rows' worth of pixels away. Sorting by span number against a raw
+  // pixel distance silently favored whichever candidate's *span number* was
+  // numerically closest to the pixel gap, not whichever hole the pointer was
+  // actually nearest to -- e.g. dragging onto the rail right next to a terminal
+  // row would snap to the *next* rail over instead.
+  const distanceOf = (candidate: JumperCandidate) =>
+    Math.abs((axis === 'col' ? candidate.endHole.x - start.x : candidate.endHole.y - start.y) * GRID_SIZE);
+
+  candidates.sort((a, b) => Math.abs(distanceOf(a) - targetDist) - Math.abs(distanceOf(b) - targetDist));
   return candidates[0];
 }
 
