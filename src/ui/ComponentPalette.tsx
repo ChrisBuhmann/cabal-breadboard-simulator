@@ -9,9 +9,16 @@ interface PaletteProps {
   onArm: (payload: DragPayload) => void;
   onCancelPending: () => void;
   onRotatePending: () => void;
+  onPendingValueChange: (value: string) => void;
 }
 
-export function ComponentPalette({ pending, onArm, onCancelPending, onRotatePending }: PaletteProps) {
+export function ComponentPalette({
+  pending,
+  onArm,
+  onCancelPending,
+  onRotatePending,
+  onPendingValueChange,
+}: PaletteProps) {
   const [values, setValues] = useState<Record<ComponentType, string>>(() => {
     const initial = {} as Record<ComponentType, string>;
     for (const t of COMPONENT_TYPES) initial[t] = COMPONENT_DEFS[t].defaultValue;
@@ -52,7 +59,14 @@ export function ComponentPalette({ pending, onArm, onCancelPending, onRotatePend
               <input
                 className="palette-value"
                 value={values[type]}
-                onChange={(e) => setValues((v) => ({ ...v, [type]: e.target.value }))}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setValues((v) => ({ ...v, [type]: next }));
+                  // Arming snapshots the value into `pending`; keep it in sync so
+                  // editing the value after arming (rather than before) still
+                  // reaches the placed component instead of a stale/default value.
+                  if (armed) onPendingValueChange(next);
+                }}
               />
             </div>
           </div>

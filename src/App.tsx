@@ -208,6 +208,7 @@ function AppInner() {
           onArm={setPending}
           onCancelPending={() => setPending(null)}
           onRotatePending={() => pending && setPending(rotatePendingValue(pending))}
+          onPendingValueChange={(value) => setPending((p) => (p ? { ...p, value } : p))}
         />
 
         <main className="board-area">
