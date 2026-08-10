@@ -3,6 +3,10 @@ import { ROW_CODES, GRID_SIZE, holeId } from '../board/boardTypes';
 
 export const JUMPER_SPANS = [1, 2, 3, 4, 6, 8, 10];
 
+/** Below this pixel movement, a wire drag is treated as "didn't really move"
+ * (e.g. a stray click) rather than a failed attempt -- no rejection needed. */
+export const JUMPER_DEAD_ZONE = GRID_SIZE * 0.3;
+
 export interface Wire {
   id: string;
   boardId: string;
@@ -44,11 +48,25 @@ function candidatesForAxis(
 export function computeJumperEnd(board: BoardModel, start: Hole, px: number, py: number): JumperCandidate | null {
   const dx = px - start.x * GRID_SIZE;
   const dy = py - start.y * GRID_SIZE;
-  if (Math.abs(dx) < GRID_SIZE * 0.3 && Math.abs(dy) < GRID_SIZE * 0.3) return null;
+  if (Math.abs(dx) < JUMPER_DEAD_ZONE && Math.abs(dy) < JUMPER_DEAD_ZONE) return null;
 
   const axis: 'row' | 'col' = Math.abs(dx) >= Math.abs(dy) ? 'col' : 'row';
   const sign: 1 | -1 = (axis === 'col' ? dx : dy) >= 0 ? 1 : -1;
   const targetDist = axis === 'col' ? Math.abs(dx) : Math.abs(dy);
+  const offAxisDist = axis === 'col' ? Math.abs(dy) : Math.abs(dx);
+
+  // Jumper wires here are straight, single-axis pieces from a fixed-length
+  // kit (JUMPER_SPANS) -- they can't bend to reach a hole that's both a
+  // different row AND a different column from `start`. A drag with a real
+  // component on BOTH axes (e.g. dragging from a terminal hole toward a rail
+  // hole one column over) used to silently commit to whichever axis had the
+  // larger raw pixel delta and discard the other axis's intent entirely --
+  // sometimes producing a wire nobody asked for, sometimes (when the
+  // discarded axis was the only one with a valid hole, e.g. a terminal
+  // column with no rail hole because it's a multiple of 6) silently no wire
+  // at all. Reject instead of guessing; the caller surfaces this so the user
+  // can do it as two straight hops.
+  if (offAxisDist > GRID_SIZE * 0.5) return null;
 
   const candidates = candidatesForAxis(board, start, axis, sign);
   if (candidates.length === 0) return null;

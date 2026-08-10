@@ -12,7 +12,13 @@ import {
   resolveComponentPinHoles,
   translateHole,
 } from '../interaction/snapLogic';
-import { computeJumperEnd, validateJumper, nextWireColor, type JumperCandidate } from '../interaction/jumperSnap';
+import {
+  computeJumperEnd,
+  validateJumper,
+  nextWireColor,
+  JUMPER_DEAD_ZONE,
+  type JumperCandidate,
+} from '../interaction/jumperSnap';
 import { clientToSvgPoint, decodeDragPayload, DRAG_MIME, type DragPayload } from '../interaction/dragDrop';
 import { COMPONENT_DEFS, isFlexibleComponent, type FlexiblePlacedComponent, type PlacedComponent } from '../components/componentDefs';
 import { rotateOffset } from '../interaction/rotation';
@@ -174,6 +180,14 @@ export function BoardView({ board, circuit, pending, onPlaced, onRejected, selec
           });
         } else {
           onRejected(check.reason ?? 'Invalid jumper');
+        }
+      } else {
+        const dx = drag.pointer.x - drag.start.x * GRID_SIZE;
+        const dy = drag.pointer.y - drag.start.y * GRID_SIZE;
+        // Only a real, failed attempt deserves a message -- a drag that never
+        // really left the start hole (a stray click) should stay silent.
+        if (Math.abs(dx) >= JUMPER_DEAD_ZONE || Math.abs(dy) >= JUMPER_DEAD_ZONE) {
+          onRejected('No straight jumper reaches there — try it as two hops (sideways, then to the rail/row)');
         }
       }
       setDrag(null);
