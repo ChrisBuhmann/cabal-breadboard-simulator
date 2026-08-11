@@ -4,7 +4,7 @@ import { CeramicCapacitorSVG, ElectrolyticCapacitorSVG, FilmCapacitorSVG } from 
 import { DiodeSVG } from './diode';
 import { LedSVG } from './led';
 import { To92SVG } from './to92';
-import { Dip8SVG, Dip14SVG } from './dip';
+import { Dip8SVG, Dip14SVG, Dip16SVG } from './dip';
 import { PotSVG } from './pot';
 import { InputJackSVG, OutputJackSVG } from './jack';
 
@@ -20,6 +20,7 @@ export const COMPONENT_RENDERERS: Record<ComponentType, ComponentVisual> = {
   to92: To92SVG,
   dip8: Dip8SVG,
   dip14: Dip14SVG,
+  dip16: Dip16SVG,
   pot: PotSVG,
   'input-jack': InputJackSVG,
   'output-jack': OutputJackSVG,

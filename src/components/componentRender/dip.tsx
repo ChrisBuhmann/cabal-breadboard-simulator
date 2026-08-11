@@ -36,3 +36,7 @@ export function Dip8SVG({ value }: { value: string }) {
 export function Dip14SVG({ value }: { value: string }) {
   return <DipBody halfWidth={7} value={value} />;
 }
+
+export function Dip16SVG({ value }: { value: string }) {
+  return <DipBody halfWidth={8} value={value} />;
+}

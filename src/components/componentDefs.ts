@@ -10,6 +10,7 @@ export type ComponentType =
   | 'to92'
   | 'dip8'
   | 'dip14'
+  | 'dip16'
   | 'pot'
   | 'input-jack'
   | 'output-jack';
@@ -188,6 +189,19 @@ export const COMPONENT_DEFS: Record<ComponentType, ComponentDef> = {
     allowedRotations: [0, 180],
     polarized: false,
     defaultValue: 'DIP-14',
+    straddlesTrench: true,
+    flexible: false,
+    draggable: false,
+  },
+  dip16: {
+    type: 'dip16',
+    label: 'DIP-16 IC',
+    packageKind: 'dip',
+    pinCount: 16,
+    basePins: dipPins(8),
+    allowedRotations: [0, 180],
+    polarized: false,
+    defaultValue: 'DIP-16',
     straddlesTrench: true,
     flexible: false,
     draggable: false,

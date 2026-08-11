@@ -121,6 +121,13 @@ export const KICAD_MAPPING: Record<ComponentType, KicadPartMapping> = {
     refPrefix: 'U',
     pins: dipPins(7),
   },
+  dip16: {
+    symbolName: 'CabalGeneric_DIP16',
+    libId: 'CabalGeneric:CabalGeneric_DIP16',
+    footprint: 'Package_DIP:DIP-16_W7.62mm_Socket',
+    refPrefix: 'U',
+    pins: dipPins(8),
+  },
   pot: {
     symbolName: 'R_Potentiometer',
     libId: 'Device:R_Potentiometer',

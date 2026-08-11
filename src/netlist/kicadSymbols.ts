@@ -510,3 +510,4 @@ ${bottomPins}
 
 export const KICAD_GENERIC_DIP8 = genericDipSymbol('CabalGeneric:CabalGeneric_DIP8', 'CabalGeneric_DIP8', 4);
 export const KICAD_GENERIC_DIP14 = genericDipSymbol('CabalGeneric:CabalGeneric_DIP14', 'CabalGeneric_DIP14', 7);
+export const KICAD_GENERIC_DIP16 = genericDipSymbol('CabalGeneric:CabalGeneric_DIP16', 'CabalGeneric_DIP16', 8);
