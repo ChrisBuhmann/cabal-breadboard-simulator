@@ -1,6 +1,12 @@
 import type { BoardModel } from '../board/boardTypes';
 import type { PlacedComponent } from '../components/componentDefs';
-import { KICAD_DEVICE_SYMBOLS, KICAD_GENERIC_DIP8, KICAD_GENERIC_DIP14, KICAD_GENERIC_DIP16 } from './kicadSymbols';
+import {
+  KICAD_DEVICE_SYMBOLS,
+  KICAD_GENERIC_DIP8,
+  KICAD_GENERIC_DIP14,
+  KICAD_GENERIC_DIP16,
+  KICAD_GENERIC_SW3PDT,
+} from './kicadSymbols';
 import { KICAD_MAPPING } from './kicadMapping';
 import type { Netlist } from './netlistBuilder';
 
@@ -129,6 +135,7 @@ export function buildKicadSchematic(boards: BoardModel[], components: PlacedComp
     if (name === 'CabalGeneric_DIP8') libSymbolBlocks.push(KICAD_GENERIC_DIP8);
     else if (name === 'CabalGeneric_DIP14') libSymbolBlocks.push(KICAD_GENERIC_DIP14);
     else if (name === 'CabalGeneric_DIP16') libSymbolBlocks.push(KICAD_GENERIC_DIP16);
+    else if (name === 'CabalGeneric_SW3PDT') libSymbolBlocks.push(KICAD_GENERIC_SW3PDT);
     else libSymbolBlocks.push(KICAD_DEVICE_SYMBOLS[name]);
   }
 

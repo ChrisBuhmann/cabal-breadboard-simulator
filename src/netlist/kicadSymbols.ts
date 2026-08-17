@@ -511,3 +511,45 @@ ${bottomPins}
 export const KICAD_GENERIC_DIP8 = genericDipSymbol('CabalGeneric:CabalGeneric_DIP8', 'CabalGeneric_DIP8', 4);
 export const KICAD_GENERIC_DIP14 = genericDipSymbol('CabalGeneric:CabalGeneric_DIP14', 'CabalGeneric_DIP14', 7);
 export const KICAD_GENERIC_DIP16 = genericDipSymbol('CabalGeneric:CabalGeneric_DIP16', 'CabalGeneric_DIP16', 8);
+
+/** Generic 9-pin placeholder for a 3PDT footswitch: a real 3PDT has 9 lugs in a
+ * 3x3 grid on a pitch that doesn't match a breadboard/0.1in grid at all, so
+ * this places all 9 pins in a single top row, left-to-right, matching this
+ * app's own breadboard hole order (componentDefs.ts's line(9)) -- not a real
+ * footswitch footprint or lug layout. Swap for the real part once chosen. */
+function genericSwitchSymbol(libId: string, name: string, pinCount: number): string {
+  const pitch = 2.54;
+  const xs = Array.from({ length: pinCount }, (_, i) => (i - (pinCount - 1) / 2) * pitch);
+  const rectHalfWidth = Math.abs(xs[0]) + pitch / 2;
+
+  const topPins = xs.map((x, i) => dipPinBlock(i + 1, x, 6.35, 270)).join('\n');
+
+  return `  (symbol "${libId}" (pin_numbers hide) (pin_names (offset 0.508)) (in_bom yes) (on_board yes)
+    (property "Reference" "SW" (at 0 8.89 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Value" "${name}" (at 0 -8.89 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "" (at 0 0 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "~" (at 0 0 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "ki_description" "Generic 3PDT placeholder - 9 pins numbered left-to-right in a single row, matching breadboard layout, NOT a real 3PDT's 3x3 lug grid or silkscreen order. Swap for the real switch's footprint once chosen." (at 0 0 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (symbol "${name}_0_1"
+      (rectangle (start -${rectHalfWidth} 3.81) (end ${rectHalfWidth} -3.81)
+        (stroke (width 0.254) (type default))
+        (fill (type background))
+      )
+    )
+    (symbol "${name}_1_1"
+${topPins}
+    )
+  )`;
+}
+
+export const KICAD_GENERIC_SW3PDT = genericSwitchSymbol('CabalGeneric:CabalGeneric_SW3PDT', 'CabalGeneric_SW3PDT', 9);

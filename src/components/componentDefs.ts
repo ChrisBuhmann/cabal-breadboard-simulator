@@ -13,9 +13,10 @@ export type ComponentType =
   | 'dip16'
   | 'pot'
   | 'input-jack'
-  | 'output-jack';
+  | 'output-jack'
+  | 'switch3pdt';
 
-export type PackageKind = 'axial' | 'radial' | 'to92' | 'dip' | 'pot' | 'jack';
+export type PackageKind = 'axial' | 'radial' | 'to92' | 'dip' | 'pot' | 'jack' | 'switch';
 
 export interface ComponentDef {
   type: ComponentType;
@@ -243,6 +244,19 @@ export const COMPONENT_DEFS: Record<ComponentType, ComponentDef> = {
     defaultValue: 'OUT',
     straddlesTrench: false,
     flexible: true,
+    draggable: true,
+  },
+  switch3pdt: {
+    type: 'switch3pdt',
+    label: '3PDT Switch',
+    packageKind: 'switch',
+    pinCount: 9,
+    basePins: line(9),
+    allowedRotations: [0, 90, 180, 270],
+    polarized: false,
+    defaultValue: '3PDT',
+    straddlesTrench: false,
+    flexible: false,
     draggable: true,
   },
 };

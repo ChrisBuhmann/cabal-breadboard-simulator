@@ -161,4 +161,15 @@ export const KICAD_MAPPING: Record<ComponentType, KicadPartMapping> = {
       { x: 5.08, y: 2.54, number: 'S' },
     ],
   },
+  switch3pdt: {
+    symbolName: 'CabalGeneric_SW3PDT',
+    libId: 'CabalGeneric:CabalGeneric_SW3PDT',
+    // Real 3PDT footswitches have a 3x3 lug grid on a pitch that doesn't match
+    // a breadboard/0.1in grid at all -- this is a generic 9-pin placeholder
+    // (single row, breadboard hole order), not a real footswitch footprint.
+    // Swap for the real part's symbol/footprint once a specific switch is chosen.
+    footprint: '',
+    refPrefix: 'SW',
+    pins: [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ({ x: (n - 5) * 2.54, y: 6.35, number: n })),
+  },
 };
