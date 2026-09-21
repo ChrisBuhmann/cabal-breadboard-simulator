@@ -7,7 +7,7 @@ import { To92SVG } from './to92';
 import { Dip8SVG, Dip14SVG, Dip16SVG } from './dip';
 import { PotSVG } from './pot';
 import { InputJackSVG, OutputJackSVG } from './jack';
-import { Switch3PDTSVG } from './switch';
+import { Switch3PDTSVG, SwitchDPDTSVG } from './switch';
 
 export type ComponentVisual = (props: { value: string }) => React.ReactElement;
 
@@ -26,4 +26,5 @@ export const COMPONENT_RENDERERS: Record<ComponentType, ComponentVisual> = {
   'input-jack': InputJackSVG,
   'output-jack': OutputJackSVG,
   switch3pdt: Switch3PDTSVG,
+  switchdpdt: SwitchDPDTSVG,
 };

@@ -1,16 +1,16 @@
 import { GRID_SIZE } from '../../board/boardTypes';
 
-/** Generic 9-lug 3PDT footswitch placeholder: pins laid out in a single row
- * (matching componentDefs.ts's line(9)), not a real footswitch's 3x3 lug
- * grid. See CabalGeneric_SW3PDT's ki_description for the same caveat on the
- * KiCad export side. */
-export function Switch3PDTSVG({ value }: { value: string }) {
-  const span = 8 * GRID_SIZE;
+/** Generic multi-lug switch placeholder: pins laid out in a single row
+ * (matching componentDefs.ts's line(n)), not a real switch's multi-row lug
+ * grid. See the corresponding CabalGeneric_SW* symbol's ki_description for
+ * the same caveat on the KiCad export side. */
+function SwitchBody({ pinCount, value }: { pinCount: number; value: string }) {
+  const span = (pinCount - 1) * GRID_SIZE;
   const bodyTopY = -GRID_SIZE * 1.6;
   const bodyH = GRID_SIZE * 1.6;
 
   const legs = [];
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < pinCount; i++) {
     const x = i * GRID_SIZE;
     legs.push(<line key={`leg${i}`} x1={x} y1={0} x2={x} y2={bodyTopY} stroke="#999" strokeWidth={1.5} />);
     legs.push(<circle key={`pin${i}`} cx={x} cy={0} r={2.5} fill="#555" />);
@@ -26,4 +26,12 @@ export function Switch3PDTSVG({ value }: { value: string }) {
       </text>
     </g>
   );
+}
+
+export function Switch3PDTSVG({ value }: { value: string }) {
+  return <SwitchBody pinCount={9} value={value} />;
+}
+
+export function SwitchDPDTSVG({ value }: { value: string }) {
+  return <SwitchBody pinCount={6} value={value} />;
 }

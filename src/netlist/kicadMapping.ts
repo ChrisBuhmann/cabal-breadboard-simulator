@@ -172,4 +172,14 @@ export const KICAD_MAPPING: Record<ComponentType, KicadPartMapping> = {
     refPrefix: 'SW',
     pins: [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ({ x: (n - 5) * 2.54, y: 6.35, number: n })),
   },
+  switchdpdt: {
+    symbolName: 'CabalGeneric_SWDPDT',
+    libId: 'CabalGeneric:CabalGeneric_SWDPDT',
+    // Real DPDT toggles have a 2-row-of-3 lug grid, not a single row on a
+    // breadboard pitch -- generic 6-pin placeholder, same convention as
+    // CabalGeneric_SW3PDT. Swap for the real part's symbol once chosen.
+    footprint: '',
+    refPrefix: 'SW',
+    pins: [1, 2, 3, 4, 5, 6].map((n) => ({ x: (n - 3.5) * 2.54, y: 6.35, number: n })),
+  },
 };

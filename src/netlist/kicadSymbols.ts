@@ -517,7 +517,7 @@ export const KICAD_GENERIC_DIP16 = genericDipSymbol('CabalGeneric:CabalGeneric_D
  * this places all 9 pins in a single top row, left-to-right, matching this
  * app's own breadboard hole order (componentDefs.ts's line(9)) -- not a real
  * footswitch footprint or lug layout. Swap for the real part once chosen. */
-function genericSwitchSymbol(libId: string, name: string, pinCount: number): string {
+function genericSwitchSymbol(libId: string, name: string, pinCount: number, realLayoutDescription: string): string {
   const pitch = 2.54;
   const xs = Array.from({ length: pinCount }, (_, i) => (i - (pinCount - 1) / 2) * pitch);
   const rectHalfWidth = Math.abs(xs[0]) + pitch / 2;
@@ -537,7 +537,7 @@ function genericSwitchSymbol(libId: string, name: string, pinCount: number): str
     (property "Datasheet" "~" (at 0 0 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "ki_description" "Generic 3PDT placeholder - 9 pins numbered left-to-right in a single row, matching breadboard layout, NOT a real 3PDT's 3x3 lug grid or silkscreen order. Swap for the real switch's footprint once chosen." (at 0 0 0)
+    (property "ki_description" "Generic placeholder - ${pinCount} pins numbered left-to-right in a single row, matching breadboard layout, NOT a real ${realLayoutDescription}. Swap for the real switch's footprint once chosen." (at 0 0 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (symbol "${name}_0_1"
@@ -552,4 +552,15 @@ ${topPins}
   )`;
 }
 
-export const KICAD_GENERIC_SW3PDT = genericSwitchSymbol('CabalGeneric:CabalGeneric_SW3PDT', 'CabalGeneric_SW3PDT', 9);
+export const KICAD_GENERIC_SW3PDT = genericSwitchSymbol(
+  'CabalGeneric:CabalGeneric_SW3PDT',
+  'CabalGeneric_SW3PDT',
+  9,
+  "3PDT's 3x3 lug grid or silkscreen order",
+);
+export const KICAD_GENERIC_SWDPDT = genericSwitchSymbol(
+  'CabalGeneric:CabalGeneric_SWDPDT',
+  'CabalGeneric_SWDPDT',
+  6,
+  "DPDT's 2-row-of-3 lug grid or silkscreen order",
+);

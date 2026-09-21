@@ -6,6 +6,7 @@ import {
   KICAD_GENERIC_DIP14,
   KICAD_GENERIC_DIP16,
   KICAD_GENERIC_SW3PDT,
+  KICAD_GENERIC_SWDPDT,
 } from './kicadSymbols';
 import { KICAD_MAPPING } from './kicadMapping';
 import type { Netlist } from './netlistBuilder';
@@ -136,6 +137,7 @@ export function buildKicadSchematic(boards: BoardModel[], components: PlacedComp
     else if (name === 'CabalGeneric_DIP14') libSymbolBlocks.push(KICAD_GENERIC_DIP14);
     else if (name === 'CabalGeneric_DIP16') libSymbolBlocks.push(KICAD_GENERIC_DIP16);
     else if (name === 'CabalGeneric_SW3PDT') libSymbolBlocks.push(KICAD_GENERIC_SW3PDT);
+    else if (name === 'CabalGeneric_SWDPDT') libSymbolBlocks.push(KICAD_GENERIC_SWDPDT);
     else libSymbolBlocks.push(KICAD_DEVICE_SYMBOLS[name]);
   }
 
